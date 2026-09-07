@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-zinc-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Practical Laravel Backend Integration & Automation</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            zinc: {
+              50: '#fafafa',
+              100: '#f4f4f5',
+              200: '#e4e4e7',
+              300: '#d4d4d8',
+              400: '#a1a1aa',
+              500: '#71717a',
+              600: '#52525b',
+              700: '#3f3f46',
+              800: '#27272a',
+              900: '#18181b',
+              950: '#09090b',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Mermaid JS for diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f4f4f5;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d4d4d8;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a1a1aa;
+    }
+
+    .mermaid svg {
+      max-width: 100% !important;
+      height: auto !important;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body class="h-full text-zinc-900 bg-zinc-100 flex flex-col overflow-hidden select-none">
+  <div id="root" class="h-full flex flex-col"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Slide Data Source
+    const presentationData = {
+      "course": {
+        "title": "Practical Laravel Backend Integration & Automation",
+        "subtitle": "Building REST & SOAP APIs, SFTP file transfers, and cron-scheduled jobs",
+        "format": "3-day hands-on training",
+        "audience": "Beginner to intermediate — developers, system integrators, and IT/ops staff",
+        "slideCount": 40,
+        "sections": [
+          "Introduction",
+          "Day 1 - Laravel REST API",
+          "Day 2 - SOAP Integration",
+          "Day 3 - SFTP, Cron & Automation",
+          "Wrap-up"
+        ],
+        "trainer": {
+          "name": "Luqman Hakim Bin Yusof",
+          "experience": "14+ years in Software Engineering and IoT System Development",
+          "sectors": "Energy, Telecommunication, Banking in SEA region",
+          "education": "Master in Information Technology"
+        }
+      },
+      "slides": [
+        {
+          "n": 1,
+          "type": "title",
+          "section": "Introduction",
+          "title": "Practical Laravel Backend Integration & Automation",
+          "subtitle": "Building REST & SOAP APIs, SFTP file transfers, and cron-scheduled jobs",
+          "footer": "3-day hands-on training  •  8 - 10 August 2026",
+          "notes": "Open by framing the course as practical integration skills rather than one framework. Explain the arc: Days 1-2 are Laravel/PHP on Windows, Day 3 is a real Linux server. Everyone leaves with a working end-to-end integration they built themselves."
+        },
+        {
+          "n": 2,
+          "type": "content",
+          "section": "Introduction",
+          "summary": "Your Trainer",
+          "title": "Luqman Hakim Bin Yusof",
+          "points": [
+            "Professional Experience — 14+ years in Software Engineering and IoT System Development",
+            "Sectors — Energy, Telecommunication, Banking in SEA region",
+            "Education — Master in Information Technology"
+          ],
+          "fields": [
+            {
+              "label": "Professional Experience",
+              "value": "14+ years in Software Engineering and IoT System Development",
+              "icon": "briefcase",
+              "emoji": "💼"
+            },
+            {
+              "label": "Sectors",
+              "value": "Energy, Telecommunication, Banking in SEA region",
+              "icon": "building-2",
+              "emoji": "🏢"
+            },
+            {
+              "label": "Education",
+              "value": "Master in Information Technology",
+              "icon": "graduation-cap",
+              "emoji": "🎓"
+            }
+          ],
+          "notes": "Introduce yourself briefly and tie the background to the course: integration work across energy, telco and banking is exactly where REST, SOAP, SFTP and scheduled jobs all meet.",
+          "layout": "bio-icon-cards"
+        },
+        {
+          "n": 3,
+          "type": "content",
+          "section": "Introduction",
+          "title": "What This Course Is",
+          "summary": "A practical 3-day training on connecting systems using Laravel and Linux.",
+          "points": [
+            "You start from a provided Laravel application and add the integration layers yourself",
+            "Day 1 — REST API: validation, consistent error handling, and security",
+            "Day 2 — SOAP: consuming and exposing services, plus automatic email alerts on failure",
+            "Day 3 — Files and automation: SFTP transfer and cron scheduling on a Linux server",
+            "Every topic follows the same shape: objective, steps, then a checkpoint you can verify"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "The three days build one continuous story",
+            "mermaid": "flowchart LR\n  A[\"Day 1<br/>REST API<br/>validate · errors · secure\"] --> B[\"Day 2<br/>SOAP<br/>consume · expose · alert\"] --> C[\"Day 3<br/>Files<br/>SFTP · script · cron\"] --> D[\"End-to-end<br/>integration\"]"
+          },
+          "notes": "Explain that the days are cumulative, not three unrelated workshops."
+        },
+        {
+          "n": 4,
+          "type": "content",
+          "section": "Introduction",
+          "title": "Objectives & Learning Outcomes",
+          "summary": "By the end of the three days, participants can:",
+          "points": [
+            "Build REST API endpoints with validation and consistent error handling",
+            "Secure APIs with token authentication (Laravel Sanctum)",
+            "Test APIs using Postman",
+            "Consume and expose SOAP services, and handle SOAP faults safely",
+            "Send email alerts automatically when an integration fails",
+            "Use SFTP by terminal and by GUI client",
+            "Automate tasks with cron, and see how the three integration styles connect into one workflow"
+          ],
+          "notes": "These come straight from the course brief. Read them as the promises of the course."
+        },
+        {
+          "n": 5,
+          "type": "content",
+          "section": "Introduction",
+          "title": "Who It's For",
+          "summary": "The audience, and the very light prerequisites.",
+          "points": [
+            "Developers who need to connect their application to other systems",
+            "System integrators joining APIs, web services and file feeds together",
+            "IT and operations staff who run, schedule and troubleshoot transfers",
+            "Helpful but not required: basic PHP, and having seen a command line before",
+            "Nothing is assumed about SOAP, Linux, or virtual machines — all taught from zero"
+          ],
+          "notes": "Explain that the group will be mixed, and that the notes are written prerequisites-first."
+        },
+        {
+          "n": 6,
+          "type": "content",
+          "section": "Introduction",
+          "title": "The Toolkit at a Glance",
+          "summary": "Each tool has one job — and appears on the day that needs it.",
+          "points": [
+            "Day 1 — Laragon (PHP, Composer, MySQL in one bundle), HeidiSQL, Postman, VS Code",
+            "Day 2 — PHP's SOAP extension, and Mailpit as a safe local test inbox",
+            "Day 3 — VirtualBox, Ubuntu Server, OpenSSH + UFW, WinSCP or FileZilla, sftp/scp, cron",
+            "Free and standard: nothing here is exotic or licensed",
+            "Each tool is explained properly at the point it is first used"
+          ],
+          "diagram": {
+            "type": "matrix",
+            "caption": "Tool → the job it does",
+            "columns": ["Day", "Tool", "The job it does"],
+            "rows": [
+              ["1", "Laragon", "One installer that gives you PHP, Composer, MySQL and web server"],
+              ["1", "Composer", "Downloads and manages the PHP libraries the app depends on"],
+              ["1", "MySQL + HeidiSQL", "Stores the data; GUI lets you see inside tables"],
+              ["1", "Postman", "Sends API requests and shows raw response"],
+              ["1", "VS Code", "Edits project files"],
+              ["2", "PHP SOAP extension", "Lets PHP speak SOAP without extra libraries"],
+              ["2", "Mailpit", "Catches outgoing test email safely"],
+              ["3", "VirtualBox", "Runs a real Linux server on your laptop"],
+              ["3", "Ubuntu Server", "Linux machine hosting drop folder"],
+              ["3", "OpenSSH / UFW", "Secure remote access & firewall management"],
+              ["3", "WinSCP / FileZilla", "Drag-and-drop file transfer from Windows"],
+              ["3", "sftp / scp / cron", "Command line transfers & scheduled jobs"]
+            ]
+          },
+          "notes": "Explain that this slide is a map, not a checklist to memorise."
+        },
+        {
+          "n": 7,
+          "type": "section",
+          "section": "Day 1 - Laravel REST API",
+          "title": "Day 1 — Laravel REST API",
+          "subtitle": "Validation, error handling and security, built one layer at a time",
+          "notes": "Set up the day's shape: install the tools, get the app running, learn REST, build CRUD API and harden it step by step."
+        },
+        {
+          "n": 8,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "Your Local Environment: Laragon",
+          "summary": "One installer instead of four fragile ones.",
+          "points": [
+            "A Laravel app needs several pieces running together: PHP, a database, and a web server",
+            "Laragon bundles them so the versions already match and nothing must be wired by hand",
+            "It also ships Composer and a database GUI, so the whole day's stack is one install",
+            "PHP is the language Laravel is written in; the course uses PHP 8.3 with Laravel 12",
+            "Standardise the environment so class time goes to the code, not setup"
+          ],
+          "diagram": {
+            "type": "layers",
+            "caption": "What Laragon gives you in one install",
+            "mermaid": "flowchart TB\n  L[\"Laragon (one installer)\"]\n  L --> P[\"PHP 8.3<br/>runs the code\"]\n  L --> C[\"Composer<br/>fetches libraries\"]\n  L --> M[\"MySQL<br/>stores the data\"]\n  L --> H[\"HeidiSQL<br/>views the data\"]\n  L --> S[\"Web server<br/>serves the app\"]"
+          },
+          "notes": "Explain what each layer does in one sentence."
+        },
+        {
+          "n": 9,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "Composer: the PHP Package Manager",
+          "summary": "Why we download the app's dependencies instead of shipping them.",
+          "points": [
+            "Modern applications are built on libraries written by other people",
+            "Composer reads the project's dependency list and downloads exactly those versions",
+            "Downloaded libraries land in a vendor folder that is never edited by hand",
+            "That folder is not shared with the project — each machine fetches its own copy",
+            "This is why the very first step on a provided project is installing dependencies"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "How a provided project becomes a running one",
+            "mermaid": "flowchart LR\n  A[\"Project files<br/>(no libraries)\"] --> B[\"Composer reads<br/>dependency list\"] --> C[\"Downloads matching<br/>library versions\"] --> D[\"vendor folder<br/>ready\"] --> E[\"App can run\"]"
+          },
+          "notes": "Explain the idea of a dependency and why pinned versions matter."
+        },
+        {
+          "n": 10,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "The Database: MySQL, Migrations & HeidiSQL",
+          "summary": "Where the data lives, and how its shape is created.",
+          "points": [
+            "MySQL is the database server; data lives in tables of rows and columns",
+            "The app connects using settings kept in an environment file, separate from code",
+            "Migrations are versioned instructions that build tables — shape is code, not clicks",
+            "Seeding fills the tables with sample data so there is something to work with",
+            "HeidiSQL is the GUI that lets you look inside and confirm what the API wrote"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "From empty database to seeded tables",
+            "mermaid": "flowchart LR\n  A[\"Create empty<br/>database\"] --> B[\"Set connection<br/>in env file\"] --> C[\"Run migrations<br/>→ tables created\"] --> D[\"Run seeder<br/>→ sample rows\"] --> E[\"Inspect in<br/>HeidiSQL\"]"
+          },
+          "notes": "Explain why migrations beat hand-made tables: repeatable, reviewable, shared."
+        },
+        {
+          "n": 11,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "Postman & VS Code",
+          "summary": "The two tools you will live in for the next two days.",
+          "points": [
+            "A browser can only send simple read requests — an API needs more than that",
+            "Postman sends any request type with custom headers/body and displays raw responses",
+            "Requests are saved into collections so tests can be repeated exactly and shared",
+            "Environments hold values like base address and login token in one place",
+            "VS Code is the editor: opens whole project folder and understands PHP"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "The development loop",
+            "mermaid": "flowchart LR\n  A[\"Edit code<br/>in VS Code\"] --> B[\"Send request<br/>in Postman\"] --> C[\"Read status<br/>+ JSON response\"] --> D[\"Confirm data<br/>in HeidiSQL\"] --> A"
+          },
+          "notes": "Explain that Postman is not only a testing tool — it is how you explore APIs."
+        },
+        {
+          "n": 12,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "REST Fundamentals",
+          "summary": "The vocabulary of web APIs, before building one.",
+          "points": [
+            "A resource is a thing the API exposes — here, users",
+            "The URL names the thing; the HTTP verb says what to do to it",
+            "Responses are JSON — structured text that any language can read",
+            "Status codes report outcome: 2xx success, 4xx caller mistake, 5xx server fault",
+            "APIs are stateless: every request carries everything needed to serve it"
+          ],
+          "diagram": {
+            "type": "table",
+            "caption": "Verb + URL + status: five standard operations",
+            "columns": ["Intent", "Verb", "URL shape", "Success status"],
+            "rows": [
+              ["List all users", "GET", "/users", "200 OK"],
+              ["Read one user", "GET", "/users/{id}", "200 OK"],
+              ["Create a user", "POST", "/users", "201 Created"],
+              ["Update a user", "PUT / PATCH", "/users/{id}", "200 OK"],
+              ["Delete a user", "DELETE", "/users/{id}", "204 No Content"]
+            ]
+          },
+          "notes": "Explain contrast between HTML web pages for humans and JSON APIs for programs."
+        },
+        {
+          "n": 13,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "From Request to Response",
+          "summary": "The path a call takes through the application.",
+          "points": [
+            "Routes connect a URL and verb to the code that handles it",
+            "A resource controller groups create, read, update and delete actions together",
+            "Framework fetches record straight from ID in URL — or returns 404 automatically",
+            "The model is the application's view of a database table",
+            "An API Resource shapes output into a stable, predictable JSON form"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "One request, five stops",
+            "mermaid": "flowchart LR\n  R[\"Request\"] --> RT[\"Route<br/>where to go?\"] --> C[\"Controller<br/>what happens?\"] --> M[\"Model<br/>talks to DB\"] --> AR[\"API Resource<br/>shapes JSON\"] --> RS[\"Response\"]"
+          },
+          "notes": "Explain separation of concerns: routes decide where, controllers decide what, models talk to DB, resources format output."
+        },
+        {
+          "n": 14,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "Trustworthy Input & Consistent Errors",
+          "summary": "Reject bad data early; return clean, predictable failures.",
+          "points": [
+            "Validation checks incoming data before any logic runs",
+            "Rules live in dedicated classes, keeping controllers clean and readable",
+            "A failed check returns a clear 422 status listing exactly which fields failed",
+            "Central error handling guarantees failures come back as JSON, never HTML pages",
+            "Internal details and stack traces stay in logs — callers see safe messages"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "The validation gate",
+            "mermaid": "flowchart TB\n  A[\"Incoming request\"] --> B{\"Passes validation?\"}\n  B -- No --> C[\"422 + field error list\"]\n  B -- Yes --> D[\"Controller logic runs\"]\n  D --> E{\"Error occurred?\"}\n  E -- No --> F[\"200 / 201 + JSON data\"]\n  E -- Yes --> G[\"Handled JSON error<br/>401 · 403 · 404 · 500\"]"
+          },
+          "notes": "Explain 'fail early, fail clearly'. Differentiate between 4xx client errors and 5xx server errors."
+        },
+        {
+          "n": 15,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "Securing the API with Token Authentication",
+          "summary": "Who is allowed to do what — and how data is protected.",
+          "points": [
+            "Sanctum is Laravel's token authentication package: log in once, receive token",
+            "Token travels on every request header; without a valid token, route returns 401",
+            "Middleware acts as a guard, running before code to reject unauthenticated calls",
+            "Passwords are hashed using one-way cryptographic algorithms",
+            "Only approved fields can be written, and sensitive attributes are masked"
+          ],
+          "diagram": {
+            "type": "sequence",
+            "caption": "The token lifecycle",
+            "mermaid": "sequenceDiagram\n  participant C as Client (Postman)\n  participant A as API\n  C->>A: Login with email + password\n  A-->>C: Bearer Token\n  C->>A: Request + Token Header\n  A-->>C: 200 OK + Data\n  C->>A: Request without Token\n  A-->>C: 401 Unauthenticated"
+          },
+          "notes": "Explain stateless tokens versus old-style server sessions."
+        },
+        {
+          "n": 16,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "Related Data: One-to-One Relationships",
+          "summary": "Real data is connected, so the API must be too.",
+          "points": [
+            "Splitting tables keeps core records lean and optional details structured",
+            "One user has one profile — a one-to-one relationship joined by foreign key",
+            "Framework expresses links in models, eliminating manual SQL joins",
+            "Related data can be eager-loaded on demand and included in JSON responses",
+            "Scales logically to one-to-many and many-to-many relationships"
+          ],
+          "diagram": {
+            "type": "er",
+            "caption": "users ↔ user_profiles",
+            "mermaid": "erDiagram\n  USERS ||--|| USER_PROFILES : has\n  USERS {\n    id integer\n    string name\n    string email\n  }\n  USER_PROFILES {\n    id integer\n    id user_id\n    string phone\n    string address\n  }"
+          },
+          "notes": "Explain modeling relationships to maintain single source of truth."
+        },
+        {
+          "n": 17,
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "Proving It Works in Postman",
+          "summary": "Testing is how you show the API keeps its promises.",
+          "points": [
+            "Group requests into collections so the full suite runs sequentially",
+            "Store base URLs and authentication tokens in Postman environment variables",
+            "Automatically capture and set tokens on login for subsequent requests",
+            "Test failure paths thoroughly: missing token -> 401, invalid payload -> 422",
+            "A passing test suite is verifiable proof your API contract holds"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "A full Postman run against the API",
+            "mermaid": "flowchart LR\n  A[\"Login<br/>→ Token Saved\"] --> B[\"Create User<br/>201\"] --> C[\"List/Read<br/>200\"] --> D[\"Update<br/>200\"] --> E[\"Delete<br/>204\"]\n  A -.-> F[\"No Token<br/>401\"]\n  B -.-> G[\"Bad Data<br/>422\"]"
+          },
+          "notes": "Highlight that testing failure paths is as crucial as testing happy paths."
+        },
+        {
+          "n": 18,
+          "type": "section",
+          "section": "Day 2 - SOAP Integration",
+          "title": "Day 2 — SOAP Integration & Failure Alerts",
+          "subtitle": "Consume a service, survive its failures, expose your own, and get told when it breaks",
+          "notes": "Frame the day as integrating with external systems you do not control."
+        },
+        {
+          "n": 19,
+          "type": "content",
+          "section": "Day 2 - SOAP Integration",
+          "title": "Today's Tools: SOAP Extension & Mailpit",
+          "summary": "Two small setup steps that unlock the whole day.",
+          "points": [
+            "PHP extension adds native protocol capabilities directly to the language runtime",
+            "SOAP extension is built-in; simply enabled in php.ini without external dependencies",
+            "Mailpit acts as a local SMTP server catching all outgoing test emails safely",
+            "View caught emails in a browser inbox — zero risk of spamming real users",
+            "Background task: Start VirtualBox + Ubuntu downloads (~3 GB) early for Day 3"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "Test emails stay safe locally",
+            "mermaid": "flowchart LR\n  A[\"Laravel sends<br/>email notification\"] --> B[\"Mailpit<br/>(Local SMTP)\"] --> C[\"Web Inbox<br/>(Browser view)\"]\n  B -. \"blocked\" .-> D[\"Real Recipients\"]"
+          },
+          "notes": "Explain why mail traps are essential during development and remind everyone to start Day 3 downloads."
+        },
+        {
+          "n": 20,
+          "type": "content",
+          "section": "Day 2 - SOAP Integration",
+          "title": "SOAP vs REST",
+          "summary": "A stricter, contract-based style of web service.",
+          "points": [
+            "REST is a flexible architectural style; SOAP is a strict, standardized protocol",
+            "SOAP uses XML exclusively, wrapped in rigid envelope structures",
+            "Services publish machine-readable WSDL contracts defining all operations",
+            "Errors return as SOAP Fault structures inside HTTP 200 responses",
+            "Dominant in enterprise environments: banking, government, telco, logistics"
+          ],
+          "diagram": {
+            "type": "comparison",
+            "caption": "Side-by-side comparison",
+            "columns": ["Aspect", "REST", "SOAP"],
+            "rows": [
+              ["Nature", "Architectural style / conventions", "Strict formal protocol"],
+              ["Data Format", "JSON, XML, Plain text", "XML only"],
+              ["Contract", "OpenAPI / Documentation (Optional)", "WSDL (Strict & mandatory)"],
+              ["Error Handling", "HTTP Status Codes (4xx, 5xx)", "SOAP Fault inside XML body"],
+              ["Operations", "HTTP Verbs + Resource URLs", "Named RPC operations"],
+              ["Target Domain", "Modern Web & Mobile apps", "Enterprise & Legacy integrations"]
+            ]
+          },
+          "notes": "Emphasize that SOAP remains widespread in high-security enterprise environments."
+        },
+        {
+          "n": 21,
+          "type": "content",
+          "section": "Day 2 - SOAP Integration",
+          "title": "Anatomy of a SOAP Message",
+          "summary": "Every SOAP message follows a predictable XML structure.",
+          "points": [
+            "XML organizes data into nested, strict element tags",
+            "Envelope is the root element wrapping the complete message structure",
+            "Header (optional) carries metadata, authentication keys, and routing tokens",
+            "Body contains the actual operation request or response data",
+            "Fault replaces normal response content inside Body when errors occur"
+          ],
+          "diagram": {
+            "type": "nested",
+            "caption": "SOAP Envelope structure",
+            "mermaid": "flowchart TB\n  subgraph ENV[\"Envelope — root XML tag\"]\n    H[\"Header (optional)<br/>Auth tokens · Header tags\"]\n    subgraph BODY[\"Body — main payload\"]\n      R[\"Operation Request / Response\"]\n      F[\"SOAP Fault<br/>(Code + Faultstring)\"]\n    end\n  end"
+          },
+          "notes": "Compare the Envelope to a physical mailing envelope with header metadata and body contents."
+        },
+        {
+          "n": 22,
+          "type": "content",
+          "section": "Day 2 - SOAP Integration",
+          "title": "The WSDL: Machine-Readable Contract",
+          "summary": "The master document describing how to interact with a service.",
+          "points": [
+            "WSDL (Web Services Description Language) is an XML document describing the service",
+            "Lists all exposed functions, expected input parameters, and return types",
+            "Defines exact endpoint URLs and transport protocols used",
+            "Allows tools like Postman or PHP SoapClient to generate request bodies automatically",
+            "Single source of truth: if implementation diverges from WSDL, calls fail"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "Information provided by a WSDL",
+            "mermaid": "flowchart LR\n  W[\"WSDL Document\"] --> O[\"Operations list\"]\n  W --> I[\"Input schema\"]\n  W --> R[\"Output schema\"]\n  W --> A[\"Service Endpoint URL\"]\n  O --> C[\"SoapClient generates<br/>typed method call\"]\n  I --> C\n  R --> C\n  A --> C"
+          },
+          "notes": "Point out that reading WSDLs is an indispensable skill for backend integrators."
+        },
+        {
+          "n": 23,
+          "type": "content",
+          "section": "Day 2 - SOAP Integration",
+          "title": "Consuming an External SOAP Service",
+          "summary": "Test manually first, then automate via code.",
+          "points": [
+            "Strip away magic: SOAP request is an HTTP POST containing an XML payload",
+            "Send raw XML in Postman to confirm server reachability and response payload",
+            "Use PHP's native SoapClient to consume functions as standard object methods",
+            "Map incoming XML fields into local database tables for application consumption",
+            "Postman handles both REST and SOAP testing seamlessly"
+          ],
+          "diagram": {
+            "type": "sequence",
+            "caption": "Manual validation to code automation",
+            "mermaid": "sequenceDiagram\n  participant P as Postman (Manual)\n  participant S as Remote SOAP Service\n  participant L as Laravel App\n  participant DB as Database\n  P->>S: POST Raw XML Envelope\n  S-->>P: 200 OK with XML Response\n  Note over P,S: Response verified manually\n  L->>S: SoapClient method call\n  S-->>L: XML Object\n  L->>DB: Persist mapped data"
+          },
+          "notes": "Emphasize why testing manually in Postman first saves debugging time later in PHP code."
+        },
+        {
+          "n": 24,
+          "type": "content",
+          "section": "Day 2 - SOAP Integration",
+          "title": "When Integrations Fail",
+          "summary": "External dependencies fail — plan resilient fallback mechanisms.",
+          "points": [
+            "Three main failure scenarios: SOAP Faults, connection timeouts, and network blips",
+            "Set explicit HTTP timeouts to prevent API workers hanging indefinitely",
+            "Implement automated retries with exponential backoff for transient glitches",
+            "Catch SoapFault exceptions cleanly to prevent application crash pages",
+            "Log diagnostic detail internally while returning graceful feedback to callers"
+          ],
+          "diagram": {
+            "type": "decision",
+            "caption": "Resilient invocation flowchart",
+            "mermaid": "flowchart TB\n  A[\"Execute SOAP Call\"] --> B{\"Success?\"}\n  B -- Yes --> C[\"Process & Save Payload\"]\n  B -- Network Blip --> D{\"Retries remaining?\"}\n  D -- Yes --> A\n  D -- No --> E[\"Trigger Exception Handler\"]\n  B -- SOAP Fault --> E\n  E --> F[\"Log error · Notify team · Return clean error\"]"
+          },
+          "notes": "Discuss resilience patterns: timeouts, retries, and circuit breakers."
+        },
+        {
+          "n": 25,
+          "type": "content",
+          "section": "Day 2 - SOAP Integration",
+          "title": "Becoming a SOAP Service Yourself",
+          "summary": "Exposing SOAP endpoints for external enterprise clients.",
+          "points": [
+            "Provide a WSDL contract for external partners to consume your server",
+            "Route incoming SOAP POST requests to a custom controller endpoint",
+            "Use PHP's SoapServer class to parse requests and invoke handler methods",
+            "Return custom SOAP Faults when business logic or validation fails",
+            "Validate with raw XML calls in Postman before releasing to partners"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "Both sides of the SOAP integration pattern",
+            "mermaid": "flowchart LR\n  subgraph CONSUMER[\"Consuming (Client)\"]\n    A[\"Laravel App\"] -- SoapClient --> B[\"External Service\"]\n  end\n  subgraph PROVIDER[\"Exposing (Server)\"]\n    C[\"External Client\"] -- SoapRequest --> D[\"Laravel (SoapServer)\"]\n  end"
+          },
+          "notes": "Explain that exposing SOAP services requires strict adherence to published contracts."
+        },
+        {
+          "n": 26,
+          "type": "content",
+          "section": "Day 2 - SOAP Integration",
+          "title": "Automatic Failure Notifications",
+          "summary": "Unattended background failures must trigger immediate notifications.",
+          "points": [
+            "Background processes run without active human monitoring — silence is dangerous",
+            "SMTP is the standard protocol applications use to hand over email messages",
+            "Laravel Notifications abstract mail delivery into clean, reusable classes",
+            "Trigger email notifications automatically inside exception catch blocks",
+            "Mailpit catches these notifications locally during testing for instant verification"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "Exception handling to email alert workflow",
+            "mermaid": "flowchart LR\n  A[\"SOAP Integration Exception\"] --> B[\"Log to storage/logs\"]\n  A --> C[\"Dispatch Notification\"] --> D[\"Mailpit SMTP Server\"]\n  D --> E[\"Dev inspects email in browser\"]\n  A --> F[\"Return safe 503 response\"]"
+          },
+          "notes": "Stress the rule: 'If a background job fails and no one is alerted, it broke silently.'"
+        },
+        {
+          "n": 27,
+          "type": "section",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "Day 3 — Files, SFTP & Scheduling",
+          "subtitle": "A real Linux server, secure transfers, and a job that runs itself",
+          "notes": "Transition into Linux server administration, SFTP protocols, and scheduled cron jobs."
+        },
+        {
+          "n": 28,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "Virtual Machines & VirtualBox",
+          "summary": "Run an isolated Linux server environment on your local system.",
+          "points": [
+            "A Virtual Machine (VM) runs an isolated operating system inside your host OS",
+            "VirtualBox is a free type-2 hypervisor managing VM hardware virtualization",
+            "Your laptop is Host OS (Windows); Ubuntu Server inside VM is Guest OS",
+            "ISO file serves as the virtual installation media to boot and install Linux",
+            "Safe sandbox: misconfigurations or broken scripts won't affect host OS"
+          ],
+          "diagram": {
+            "type": "layers",
+            "caption": "Host hypervisor and guest isolation",
+            "mermaid": "flowchart TB\n  H[\"Host OS — Windows 10/11\"] --> V[\"VirtualBox Hypervisor\"]\n  V --> G[\"Guest OS: Ubuntu Server 24.04 LTS<br/>(Dedicated CPU, RAM, Virtual Disk)\"]\n  G --> S[\"OpenSSH Service · SFTP Drop Folder · Cron Daemon\"]"
+          },
+          "notes": "Reassure participants that virtual machines provide a risk-free environment for learning Linux."
+        },
+        {
+          "n": 29,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "Ubuntu Server & Command Line Basics",
+          "summary": "Managing server environments without graphical interfaces.",
+          "points": [
+            "Ubuntu Server operates without a Graphical User Interface (GUI) to optimize performance",
+            "All administration occurs through text-based CLI commands",
+            "Elevated administrative actions require `sudo` privileges explicitly",
+            "Package management (`apt`) installs and updates software securely from mirrors",
+            "Terminal text editors (`nano`, `vim`) edit server configs directly"
+          ],
+          "diagram": {
+            "type": "comparison",
+            "caption": "Desktop GUI habits vs Server CLI habits",
+            "columns": ["Task", "Windows Desktop", "Ubuntu Linux Server"],
+            "rows": [
+              ["Navigation", "Clicking folders in File Explorer", "`cd /var/www` / `ls -la`"],
+              ["Software Install", "Downloading `.exe` installers", "`sudo apt install package-name`"],
+              ["Configuration", "Settings GUIs and checkboxes", "Editing plain text files with `nano`"],
+              ["Admin Rights", "UAC popup prompt", "Prefixing commands with `sudo`"],
+              ["Automation", "Manual repetition", "Shell scripting + Cron schedules"]
+            ]
+          },
+          "notes": "Demonstrate basic CLI navigation commands (`ls`, `cd`, `pwd`, `nano`)."
+        },
+        {
+          "n": 30,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "VM Networking: Reaching the Server",
+          "summary": "Connecting host software to virtual guest machines.",
+          "points": [
+            "The VM needs a valid network IP address accessible from the Windows host",
+            "Bridged Mode attaches VM directly to physical Wi-Fi/LAN as an independent node",
+            "NAT Mode hides VM behind host, requiring explicit Port Forwarding rules (e.g. 2222 -> 22)",
+            "Always verify network reachability using `ping` before debugging application layers",
+            "Follow structured troubleshooting: VM status -> IP -> Ping -> SSH Port -> Auth"
+          ],
+          "diagram": {
+            "type": "comparison",
+            "caption": "Networking mode comparison",
+            "columns": ["Feature", "Bridged Networking", "NAT with Port Forwarding"],
+            "rows": [
+              ["IP Address", "Obtains IP from local router", "Internal private hypervisor subnet"],
+              ["Host Reachability", "Direct IP connection", "Connect via `127.0.0.1:2222`"],
+              ["Setup Complexity", "Zero configuration required", "Requires port forwarding rule"],
+              ["Restricted Wi-Fi", "May be blocked by enterprise APs", "Always works regardless of network"],
+              ["Recommended Use", "Standard home/office networks", "Strict corporate Wi-Fi environments"]
+            ]
+          },
+          "notes": "Walk through setting up Port Forwarding in VirtualBox for NAT mode."
+        },
+        {
+          "n": 31,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "SSH: Secure Remote Access",
+          "summary": "Encrypted terminal connections and secure transfers.",
+          "points": [
+            "SSH (Secure Shell) provides encrypted remote command-line access over port 22",
+            "OpenSSH server daemon (`sshd`) manages incoming connections on Linux",
+            "Replaces legacy insecure protocols like Telnet that sent plaintext passwords",
+            "Supports password authentication or RSA/ED25519 cryptographic SSH key pairs",
+            "SFTP (SSH File Transfer Protocol) runs natively inside the same SSH tunnel"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "Single encrypted SSH tunnel supporting dual functionality",
+            "mermaid": "flowchart LR\n  W[\"Windows Host<br/>(Terminal / WinSCP)\"] -- \"Encrypted Tunnel (Port 22)\" --> S[\"Ubuntu Server<br/>(OpenSSH sshd)\"]\n  S --> A[\"Interactive Shell Session\"]\n  S --> B[\"SFTP File Transfer Subsystem\"]"
+          },
+          "notes": "Explain why SSH key-based authentication is superior to passwords for server security."
+        },
+        {
+          "n": 32,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "SFTP vs FTP vs FTPS",
+          "summary": "Understanding protocol differences and security models.",
+          "points": [
+            "Legacy FTP transfers credentials and file content in plain readable text — insecure",
+            "FTPS adds SSL/TLS encryption to FTP, but requires multiple dynamic ports",
+            "SFTP is built into SSH: encrypted by default, requires only a single port (22)",
+            "SFTP is firewall-friendly and supports key-based passwordless automation",
+            "Industry standard for secure inter-organization file exchanges"
+          ],
+          "diagram": {
+            "type": "comparison",
+            "caption": "File transfer protocol matrix",
+            "columns": ["Protocol", "Encryption", "Underlying Transport", "Firewall Ports", "Security Rating"],
+            "rows": [
+              ["FTP", "None (Plaintext)", "Raw TCP", "20, 21 + Dynamic ports", "Unsafe (Obsolete)"],
+              ["FTPS", "TLS / SSL", "FTP Protocol", "21 + Dynamic data ports", "Secure but complex"],
+              ["SFTP", "SSH Encryption", "SSH Protocol", "Single Port (22)", "Highly Secure (Preferred)"]
+            ]
+          },
+          "notes": "Clarify common confusion between FTPS and SFTP."
+        },
+        {
+          "n": 33,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "Configuring SFTP: Users, Permissions & Firewall",
+          "summary": "Hardening file drop zones and host access.",
+          "points": [
+            "Create dedicated unprivileged system accounts for file drop operations (`sftpuser`)",
+            "Restrict user permissions to specific drop folder directories using Linux file ownership",
+            "UFW (Uncomplicated Firewall) blocks unauthorized incoming port connections",
+            "Always enable firewall rule `sudo ufw allow 22/tcp` before turning UFW on",
+            "Single port rule (22) opens access for SSH CLI commands, SFTP, and SCP"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "Incoming file request passing server security controls",
+            "mermaid": "flowchart LR\n  P[\"External Client\"] -- \"SFTP Port 22\" --> F[\"UFW Firewall<br/>(Allow 22/tcp)\"] --> S[\"OpenSSH Service\"] --> U[\"Isolated Account<br/>(sftpuser)\"] --> D[\"/var/sftp/dropzone\"]"
+          },
+          "notes": "Warn participants never to activate `ufw enable` without allowing SSH port 22 first."
+        },
+        {
+          "n": 34,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "GUI File Transfer: WinSCP & FileZilla",
+          "summary": "Drag-and-drop file operations between local and remote systems.",
+          "points": [
+            "Graphical SFTP clients provide dual-pane views of local and remote file systems",
+            "Connecting requires Host IP, Port (22), User Credentials, or SSH Key",
+            "Drag-and-drop files seamlessly between host desktop and remote drop folder",
+            "Saves connection profiles for quick re-authentication during development",
+            "Ideal tool for operations teams manually verifying file transfers"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "Dual-pane GUI file transfer concept",
+            "mermaid": "flowchart LR\n  subgraph LOCAL[\"Left Pane: Windows Host\"]\n    A[\"C:\\exports\\orders_2026.csv\"]\n  end\n  subgraph REMOTE[\"Right Pane: Ubuntu Server\"]\n    B[\"/var/sftp/dropzone/inbox/\"]\n  end\n  A -- \"Drag & Drop (SFTP)\" --> B"
+          },
+          "notes": "Guide participants through connecting WinSCP or FileZilla to their Ubuntu VM."
+        },
+        {
+          "n": 35,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "WinSCP & FileZilla in Depth",
+          "summary": "Advanced client capabilities for system integrators.",
+          "points": [
+            "Direct remote editing: edit files on server, autosave uploads modifications",
+            "Directory synchronization: compare local and remote folders to identify missing files",
+            "Transfer queues with automatic resume functionality for interrupted connections",
+            "Modify file permissions (`chmod 644` / `chmod 755`) directly in property dialogs",
+            "WinSCP generates automation scripts (PowerShell/Batch) from GUI sessions"
+          ],
+          "diagram": {
+            "type": "comparison",
+            "caption": "Feature comparison: WinSCP vs FileZilla",
+            "columns": ["Feature", "WinSCP", "FileZilla"],
+            "rows": [
+              ["Platforms", "Windows only", "Windows, macOS, Linux"],
+              ["Remote File Edit", "Integrated internal/external editor", "Opens system default editor"],
+              ["Directory Sync", "Automated remote directory sync", "Visual manual directory compare"],
+              ["Script Generation", "Export session to Script / C# / PowerShell", "Import / Export Site XML only"],
+              ["Interface Style", "Classic Explorer / Commander dual pane", "Multi-window tree view"]
+            ]
+          },
+          "notes": "Showcase WinSCP's 'Generate Code' feature to create PowerShell automation scripts."
+        },
+        {
+          "n": 36,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "Terminal File Transfers: sftp & scp",
+          "summary": "Command-line file management without graphical interfaces.",
+          "points": [
+            "Interactive `sftp` terminal session provides commands for navigation and transfer",
+            "Local commands are prefixed with 'l' (`lcd`, `lls`, `lpwd`), remote commands are standard",
+            "`put` uploads files to server; `get` downloads files from server",
+            "`scp` (Secure Copy) transfers files non-interactively in a single terminal command",
+            "Non-interactive terminal commands are essential building blocks for scripts"
+          ],
+          "diagram": {
+            "type": "reference",
+            "caption": "Essential interactive SFTP commands",
+            "columns": ["Command", "Action / Target"],
+            "rows": [
+              ["`pwd` / `lpwd`", "Print Remote working directory / Print Local working directory"],
+              ["`ls` / `lls`", "List files on Remote server / List files on Local machine"],
+              ["`cd` / `lcd`", "Change Remote directory / Change Local directory"],
+              ["`put data.csv`", "Upload local `data.csv` to current remote folder"],
+              ["`get report.pdf`","Download remote `report.pdf` to local folder"],
+              ["`put -r ./logs`","Upload entire folder recursively"],
+              ["`bye` or `exit`","Close SFTP terminal connection"]
+            ]
+          },
+          "notes": "Emphasize the 'l' prefix rule: `ls` lists server files, `lls` lists local laptop files."
+        },
+        {
+          "n": 37,
+          "type": "content",
+          "section": "Day 3 - SFTP, Cron & Automation",
+          "title": "Cron: Making It Run by Itself",
+          "summary": "Linux time-based job scheduler for automated batch processing.",
+          "points": [
+            "Cron daemon runs continuously in background executing scheduled tasks",
+            "Each user maintains a `crontab` file containing execution schedules and shell commands",
+            "Schedule expressions use 5 fields: Minute, Hour, Day of Month, Month, Day of Week",
+            "Cron jobs run in stripped environments: always use absolute paths (`/usr/bin/php`)",
+            "Redirect standard output and errors to log files (`>> /var/log/myjob.log 2>&1`)"
+          ],
+          "diagram": {
+            "type": "reference",
+            "caption": "Crontab syntax structure",
+            "columns": ["Field", "Allowed Values", "Example", "Meaning"],
+            "rows": [
+              ["1. Minute", "0 – 59", "`*/5`", "Every 5 minutes"],
+              ["2. Hour", "0 – 23", "`0`", "At midnight (00:00)"],
+              ["3. Day of Month", "1 – 31", "`*`", "Every day of the month"],
+              ["4. Month", "1 – 12", "`*`", "Every month"],
+              ["5. Day of Week", "0 – 6 (Sun = 0)", "`1-5`", "Monday through Friday"],
+              ["Command", "Full shell path", "`/usr/bin/php /app/artisan schedule:run`", "Laravel Scheduler command"]
+            ]
+          },
+          "notes": "Demonstrate editing crontab using `crontab -e` and explain path redirection."
+        },
+        {
+          "n": 38,
+          "type": "content",
+          "section": "Wrap-up",
+          "title": "Putting It All Together",
+          "summary": "End-to-end integration architecture combining REST, SOAP, SFTP & Cron.",
+          "points": [
+            "REST APIs accept real-time transactional data protected by Sanctum tokens",
+            "SOAP services exchange rigid enterprise messages with external systems",
+            "SFTP channels transfer bulk data files securely into scheduled server drop zones",
+            "Cron triggers Laravel artisan commands to ingest files automatically",
+            "Centralized error handling logs issues and fires immediate email alerts"
+          ],
+          "diagram": {
+            "type": "architecture",
+            "caption": "Complete backend integration ecosystem",
+            "mermaid": "flowchart TB\n  subgraph EXT[\"External Ecosystem\"]\n    API_C[\"Mobile / Web Clients\"]\n    SOAP_P[\"Enterprise Partners\"]\n    FILE_P[\"Legacy File Servers\"]\n  end\n  subgraph SRV[\"Ubuntu Linux Server\"]\n    INB[\"/var/sftp/dropzone/\"]\n    CRON[\"Cron Scheduled Job\"]\n    subgraph APP[\"Laravel Backend Application\"]\n      REST_E[\"REST API Controllers\"]\n      SOAP_E[\"SOAP Services\"]\n      INGEST[\"File Ingestion Process\"]\n      MAIL[\"Mail Notification Service\"]\n    end\n    DB[(\"MySQL Database\")]\n  end\n  API_C -- \"REST JSON + Bearer Token\" --> REST_E\n  SOAP_P -- \"SOAP XML Envelopes\" --> SOAP_E\n  FILE_P -- \"SFTP Upload\" --> INB\n  INB --> CRON --> INGEST\n  REST_E --> DB\n  SOAP_E --> DB\n  INGEST --> DB\n  APP -- \"On Error Failure\" --> MAIL --> MAILPIT[\"Mailpit / SMTP Inbox\"]"
+          },
+          "notes": "Walk through the entire end-to-end pipeline diagram showing how all 3 days connect."
+        },
+        {
+          "n": 39,
+          "type": "content",
+          "section": "Wrap-up",
+          "title": "The Integration Mindset",
+          "summary": "Core architectural principles for robust backend engineering.",
+          "points": [
+            "Never trust raw input: validate strictly at every boundary (API, XML, SFTP files)",
+            "Fail early and clearly: return structured error responses instead of unhandled crashes",
+            "Design for failure: assume external services will experience latency, outages, or faults",
+            "Security by default: use tokens, hashed secrets, minimal permissions, and encrypted protocols",
+            "Observability: log background executions and make failures self-announcing via alerts"
+          ],
+          "notes": "Emphasize these five principles as timeless habits applicable across all frameworks and languages."
+        },
+        {
+          "n": 40,
+          "type": "content",
+          "section": "Wrap-up",
+          "title": "Summary & Next Steps",
+          "summary": "Key milestones accomplished and future growth pathways.",
+          "points": [
+            "Built: Secured REST API with token auth, validation, and standardized error responses",
+            "Built: SOAP Client and Server integrations with fault trapping and Mailpit alerts",
+            "Built: Linux SFTP server, secure user drop zone, and automated Cron execution pipeline",
+            "Next Steps: Queued background jobs (Redis/RabbitMQ), Server Hardening, CI/CD pipelines",
+            "Open floor for Questions & Wrap-up Discussion"
+          ],
+          "notes": "Revisit learning outcomes from Slide 4 and open the floor for final Q&A."
+        }
+      ]
+    };
+
+    // Lucide Icon Helper Component
+    const LucideIcon = ({ name, className = "w-5 h-5", fallbackEmoji = "📌" }) => {
+      const iconRef = useRef(null);
+
+      useEffect(() => {
+        if (window.lucide && iconRef.current) {
+          iconRef.current.innerHTML = `<i data-lucide="${name}" class="${className}"></i>`;
+          window.lucide.createIcons({
+            attrs: { class: className },
+            nameAttr: 'data-lucide'
+          });
+        }
+      }, [name, className]);
+
+      return <span ref={iconRef} className="inline-flex items-center justify-center">{fallbackEmoji}</span>;
+    };
+
+    // Mermaid Diagram Component
+    const MermaidDiagram = ({ definition, id }) => {
+      const containerRef = useRef(null);
+
+      useEffect(() => {
+        if (window.mermaid && containerRef.current && definition) {
+          try {
+            window.mermaid.initialize({
+              startOnLoad: false,
+              theme: 'neutral',
+              securityLevel: 'loose',
+              themeVariables: {
+                primaryColor: '#e4e4e7',
+                primaryTextColor: '#18181b',
+                primaryBorderColor: '#a1a1aa',
+                lineColor: '#52525b',
+                secondaryColor: '#f4f4f5',
+                tertiaryColor: '#fafafa'
+              }
+            });
+            const uniqueId = `mermaid-svg-${id}-${Math.floor(Math.random() * 10000)}`;
+            window.mermaid.render(uniqueId, definition).then(({ svg }) => {
+              if (containerRef.current) {
+                containerRef.current.innerHTML = svg;
+              }
+            }).catch(err => {
+              console.error("Mermaid Render Error:", err);
+              if (containerRef.current) {
+                containerRef.current.innerHTML = `<pre class="text-xs text-zinc-500 font-mono p-4 bg-zinc-100 rounded border border-zinc-200 overflow-x-auto">${definition}</pre>`;
+              }
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }, [definition, id]);
+
+      return (
+        <div className="w-full flex justify-center items-center overflow-x-auto p-2 bg-white rounded-lg border border-zinc-200 shadow-sm" ref={containerRef}>
+          <div className="text-xs text-zinc-400 py-8">Rendering diagram...</div>
+        </div>
+      );
+    };
+
+    // Main App Component
+    function App() {
+      const [currentSlideIdx, setCurrentSlideIdx] = useState(0);
+      const [showNotes, setShowNotes] = useState(false);
+      const [showGrid, setShowGrid] = useState(false);
+      const [isFullscreen, setIsFullscreen] = useState(false);
+      const [showShortcuts, setShowShortcuts] = useState(false);
+
+      const slides = presentationData.slides;
+      const slide = slides[currentSlideIdx];
+      const totalSlides = slides.length;
+
+      // Keyboard Navigation
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (e.key === "ArrowRight" || e.key === "Space" || e.key === "PageDown") {
+            e.preventDefault();
+            nextSlide();
+          } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+            e.preventDefault();
+            prevSlide();
+          } else if (e.key.toLowerCase() === "n") {
+            setShowNotes(prev => !prev);
+          } else if (e.key.toLowerCase() === "g") {
+            setShowGrid(prev => !prev);
+          } else if (e.key.toLowerCase() === "f") {
+            toggleFullscreen();
+          } else if (e.key === "?") {
+            setShowShortcuts(prev => !prev);
+          }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+      }, [currentSlideIdx]);
+
+      const nextSlide = () => {
+        if (currentSlideIdx < totalSlides - 1) {
+          setCurrentSlideIdx(prev => prev + 1);
+        }
+      };
+
+      const prevSlide = () => {
+        if (currentSlideIdx > 0) {
+          setCurrentSlideIdx(prev => prev - 1);
+        }
+      };
+
+      const jumpToSlide = (index) => {
+        setCurrentSlideIdx(index);
+        setShowGrid(false);
+      };
+
+      const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(err => console.error(err));
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen().then(() => setIsFullscreen(false)).catch(err => console.error(err));
+          }
+        }
+      };
+
+      return (
+        <div className="h-full flex flex-col bg-zinc-100 text-zinc-900 font-sans">
+          
+          {/* Top Navigation Bar */}
+          <header className="bg-white border-b border-zinc-200 px-4 py-2.5 flex items-center justify-between shrink-0 shadow-sm z-10">
+            <div className="flex items-center space-x-3">
+              <div className="bg-zinc-900 text-white p-1.5 rounded-md flex items-center justify-center">
+                <LucideIcon name="terminal" className="w-4 h-4" fallbackEmoji="💻" />
+              </div>
+              <div>
+                <h1 className="text-sm font-semibold text-zinc-900 leading-none">
+                  {presentationData.course.title}
+                </h1>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {slide.section} • Slide {slide.n} of {totalSlides}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowNotes(!showNotes)}
+                className={`p-2 text-xs font-medium rounded-lg border transition flex items-center space-x-1.5 ${
+                  showNotes 
+                    ? 'bg-zinc-900 text-zinc-50 border-zinc-900' 
+                    : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                }`}
+                title="Toggle Speaker Notes (N)"
+              >
+                <LucideIcon name="file-text" className="w-4 h-4" fallbackEmoji="📝" />
+                <span className="hidden sm:inline">Trainer Notes</span>
+              </button>
+
+              <button
+                onClick={() => setShowGrid(!showGrid)}
+                className={`p-2 text-xs font-medium rounded-lg border transition flex items-center space-x-1.5 ${
+                  showGrid 
+                    ? 'bg-zinc-900 text-zinc-50 border-zinc-900' 
+                    : 'bg-zinc-50 text-zinc-700 border-zinc-200 hover:bg-zinc-100'
+                }`}
+                title="Overview Grid (G)"
+              >
+                <LucideIcon name="grid" className="w-4 h-4" fallbackEmoji="🔲" />
+                <span className="hidden sm:inline">Overview</span>
+              </button>
+
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 text-xs font-medium bg-zinc-50 text-zinc-700 border border-zinc-200 hover:bg-zinc-100 rounded-lg transition"
+                title="Toggle Fullscreen (F)"
+              >
+                <LucideIcon name={isFullscreen ? "minimize" : "maximize"} className="w-4 h-4" fallbackEmoji="⛶" />
+              </button>
+
+              <button
+                onClick={() => setShowShortcuts(!showShortcuts)}
+                className="p-2 text-xs font-medium bg-zinc-50 text-zinc-700 border border-zinc-200 hover:bg-zinc-100 rounded-lg transition"
+                title="Keyboard Shortcuts (?)"
+              >
+                <LucideIcon name="help-circle" className="w-4 h-4" fallbackEmoji="❓" />
+              </button>
+            </div>
+          </header>
+
+          {/* Progress Bar */}
+          <div className="w-full bg-zinc-200 h-1 shrink-0">
+            <div 
+              className="bg-zinc-900 h-1 transition-all duration-300"
+              style={{ width: `${((currentSlideIdx + 1) / totalSlides) * 100}%` }}
+            ></div>
+          </div>
+
+          {/* Main Slide Stage Area */}
+          <main className="flex-1 overflow-hidden p-4 sm:p-6 flex items-center justify-center relative">
+            <div className="w-full max-w-6xl h-full flex flex-col bg-white rounded-xl border border-zinc-200 shadow-xl shadow-zinc-200/50 overflow-hidden relative">
+              
+              {/* SLIDE TYPE 1: TITLE SLIDE */}
+              {slide.type === "title" && (
+                <div className="h-full flex flex-col justify-between p-8 sm:p-12 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950 text-white relative overflow-hidden">
+                  <div className="absolute top-0 right-0 -mr-16 -mt-16 w-96 h-96 bg-zinc-700/20 rounded-full blur-3xl pointer-events-none"></div>
+                  
+                  <div className="space-y-6 z-10 max-w-3xl my-auto">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-mono font-medium bg-zinc-700/60 text-zinc-200 border border-zinc-600/50 backdrop-blur-sm">
+                      {slide.footer || "3-Day Hands-on Integration Training"}
+                    </span>
+                    <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
+                      {slide.title}
+                    </h1>
+                    <p className="text-lg sm:text-xl text-zinc-300 font-normal leading-relaxed">
+                      {slide.subtitle}
+                    </p>
+                  </div>
+
+                  <div className="pt-8 border-t border-zinc-700/60 flex flex-wrap items-center justify-between gap-4 z-10 text-xs text-zinc-400 font-mono">
+                    <div className="flex items-center space-x-2">
+                      <LucideIcon name="user" className="w-4 h-4 text-zinc-300" fallbackEmoji="👤" />
+                      <span>Luqman Hakim Bin Yusof</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <LucideIcon name="code" className="w-4 h-4 text-zinc-300" fallbackEmoji="🛠️" />
+                      <span>Laravel • SOAP • SFTP • Cron</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SLIDE TYPE 2: SECTION DIVIDER SLIDE */}
+              {slide.type === "section" && (
+                <div className="h-full flex flex-col justify-center items-center p-8 sm:p-12 bg-zinc-900 text-white text-center relative">
+                  <div className="max-w-2xl space-y-4">
+                    <span className="text-xs font-mono uppercase tracking-widest text-zinc-400 bg-zinc-800 px-3 py-1 rounded-full border border-zinc-700">
+                      Module Section
+                    </span>
+                    <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-zinc-50">
+                      {slide.title}
+                    </h2>
+                    <p className="text-lg text-zinc-300 leading-relaxed font-light">
+                      {slide.subtitle}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* SLIDE TYPE 3: CONTENT SLIDES */}
+              {slide.type === "content" && (
+                <div className="h-full flex flex-col p-6 sm:p-8 overflow-y-auto">
+                  
+                  {/* Slide Header */}
+                  <div className="mb-6 shrink-0 border-b border-zinc-100 pb-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded">
+                        {slide.section}
+                      </span>
+                      <span className="text-xs font-mono text-zinc-400">#0{slide.n}</span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight mt-1.5">
+                      {slide.title}
+                    </h2>
+                    {slide.summary && (
+                      <p className="text-sm text-zinc-600 mt-1 font-medium">
+                        {slide.summary}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Main Content Grid */}
+                  <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+                    
+                    {/* Left Column: Points or Special Layout */}
+                    <div className={`${slide.diagram ? "lg:col-span-5" : "lg:col-span-12"} flex flex-col justify-start space-y-3`}>
+                      
+                      {/* Special Bio Cards Layout (Slide 2) */}
+                      {slide.layout === "bio-icon-cards" && slide.fields ? (
+                        <div className="grid grid-cols-1 gap-4 w-full">
+                          {slide.fields.map((field, idx) => (
+                            <div key={idx} className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex items-start space-x-4">
+                              <div className="p-3 bg-white border border-zinc-200 rounded-lg text-zinc-900 shadow-sm shrink-0">
+                                <LucideIcon name={field.icon} className="w-6 h-6" fallbackEmoji={field.emoji} />
+                              </div>
+                              <div>
+                                <span className="text-xs font-mono font-semibold text-zinc-500 uppercase tracking-wider">
+                                  {field.label}
+                                </span>
+                                <p className="text-sm sm:text-base font-semibold text-zinc-800 mt-0.5">
+                                  {field.value}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        /* Standard Points List */
+                        <ul className="space-y-3">
+                          {slide.points && slide.points.map((pt, i) => (
+                            <li key={i} className="flex items-start space-x-3 p-3 rounded-lg bg-zinc-50/80 border border-zinc-200/60 hover:border-zinc-300 transition">
+                              <span className="w-5 h-5 rounded-full bg-zinc-900 text-white text-xs font-mono flex items-center justify-center shrink-0 mt-0.5">
+                                {i + 1}
+                              </span>
+                              <span className="text-sm text-zinc-700 leading-relaxed font-normal">
+                                {pt}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    {/* Right Column: Diagrams / Tables / Visuals */}
+                    {slide.diagram && (
+                      <div className="lg:col-span-7 flex flex-col justify-start min-h-0">
+                        <div className="bg-zinc-50 rounded-xl p-4 border border-zinc-200 flex flex-col h-full overflow-hidden">
+                          {slide.diagram.caption && (
+                            <div className="text-xs font-mono font-semibold text-zinc-600 mb-2 flex items-center space-x-1.5 shrink-0">
+                              <LucideIcon name="eye" className="w-3.5 h-3.5 text-zinc-500" fallbackEmoji="👁️" />
+                              <span>{slide.diagram.caption}</span>
+                            </div>
+                          )}
+
+                          {/* Render Mermaid Diagrams */}
+                          {slide.diagram.mermaid && (
+                            <div className="flex-1 flex items-center justify-center overflow-auto min-h-0">
+                              <MermaidDiagram definition={slide.diagram.mermaid} id={slide.n} />
+                            </div>
+                          )}
+
+                          {/* Render Tables / Matrix / Comparisons */}
+                          {slide.diagram.columns && slide.diagram.rows && (
+                            <div className="flex-1 overflow-auto rounded-lg border border-zinc-200 bg-white">
+                              <table className="w-full text-left text-xs">
+                                <thead className="bg-zinc-100 border-b border-zinc-200 font-mono text-zinc-700 uppercase">
+                                  <tr>
+                                    {slide.diagram.columns.map((col, cIdx) => (
+                                      <th key={cIdx} className="p-2.5 font-semibold">
+                                        {col}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-zinc-200 font-sans">
+                                  {slide.diagram.rows.map((row, rIdx) => (
+                                    <tr key={rIdx} className={rIdx % 2 === 0 ? "bg-white" : "bg-zinc-50/50"}>
+                                      {row.map((cell, cellIdx) => (
+                                        <td key={cellIdx} className={`p-2.5 text-zinc-700 ${cellIdx === 0 ? 'font-medium text-zinc-900 font-mono' : ''}`}>
+                                          {cell}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* Slide Footer Info */}
+                  <div className="mt-auto pt-4 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-400 font-mono shrink-0">
+                    <span>{presentationData.course.title}</span>
+                    <span>Practical Training Series</span>
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          </main>
+
+          {/* Bottom Control Bar */}
+          <footer className="bg-white border-t border-zinc-200 px-4 py-3 flex items-center justify-between shrink-0 shadow-sm z-10">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={prevSlide}
+                disabled={currentSlideIdx === 0}
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1"
+              >
+                <LucideIcon name="chevron-left" className="w-4 h-4" fallbackEmoji="◀" />
+                <span>Prev</span>
+              </button>
+
+              <button
+                onClick={nextSlide}
+                disabled={currentSlideIdx === totalSlides - 1}
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-zinc-900 text-white hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center space-x-1"
+              >
+                <span>Next</span>
+                <LucideIcon name="chevron-right" className="w-4 h-4" fallbackEmoji="▶" />
+              </button>
+            </div>
+
+            {/* Slide Quick Select Dropdown */}
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-zinc-500 font-mono hidden sm:inline">Jump to:</span>
+              <select
+                value={currentSlideIdx}
+                onChange={(e) => setCurrentSlideIdx(Number(e.target.value))}
+                className="text-xs font-mono bg-zinc-50 border border-zinc-200 rounded-lg px-2.5 py-1.5 text-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 max-w-[200px] sm:max-w-xs"
+              >
+                {slides.map((s, idx) => (
+                  <option key={idx} value={idx}>
+                    Slide {s.n}: {s.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="text-xs font-mono text-zinc-500 hidden md:block">
+              Press <kbd className="px-1.5 py-0.5 bg-zinc-100 border border-zinc-300 rounded text-zinc-700">?</kbd> for shortcuts
+            </div>
+          </footer>
+
+          {/* Drawer: Speaker Notes */}
+          {showNotes && (
+            <div className="absolute bottom-16 right-4 w-96 max-w-full bg-zinc-900 text-white p-4 rounded-xl shadow-2xl border border-zinc-700 z-30 animate-in slide-in-from-bottom-4">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-700">
+                <div className="flex items-center space-x-2 text-xs font-mono font-semibold text-zinc-300 uppercase">
+                  <LucideIcon name="message-square" className="w-4 h-4 text-zinc-400" fallbackEmoji="💬" />
+                  <span>Trainer Guidance</span>
+                </div>
+                <button 
+                  onClick={() => setShowNotes(false)}
+                  className="text-zinc-400 hover:text-white p-1"
+                >
+                  <LucideIcon name="x" className="w-4 h-4" fallbackEmoji="✖" />
+                </button>
+              </div>
+              <p className="text-xs text-zinc-300 leading-relaxed font-sans">
+                {slide.notes || "No trainer notes for this slide."}
+              </p>
+            </div>
+          )}
+
+          {/* Modal: Overview Grid Modal */}
+          {showGrid && (
+            <div className="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-50 flex flex-col p-6 overflow-hidden">
+              <div className="flex items-center justify-between mb-4 text-white">
+                <div>
+                  <h2 className="text-xl font-bold">Slide Overview</h2>
+                  <p className="text-xs text-zinc-400 font-mono">Select any slide to navigate directly</p>
+                </div>
+                <button
+                  onClick={() => setShowGrid(false)}
+                  className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-white"
+                >
+                  <LucideIcon name="x" className="w-5 h-5" fallbackEmoji="✖" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-2">
+                {slides.map((s, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => jumpToSlide(idx)}
+                    className={`p-3 rounded-lg border text-left flex flex-col justify-between transition h-28 relative overflow-hidden ${
+                      idx === currentSlideIdx 
+                        ? 'bg-zinc-900 text-white border-zinc-400 ring-2 ring-white' 
+                        : 'bg-white text-zinc-900 border-zinc-200 hover:border-zinc-400'
+                    }`}
+                  >
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                      #{s.n} • {s.section}
+                    </span>
+                    <h3 className="text-xs font-bold line-clamp-2 mt-1">
+                      {s.title}
+                    </h3>
+                    <div className="mt-2 text-[10px] opacity-60 truncate">
+                      {s.type} slide
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Modal: Keyboard Shortcuts */}
+          {showShortcuts && (
+            <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-zinc-200">
+                <div className="flex items-center justify-between pb-3 mb-4 border-b border-zinc-200">
+                  <h3 className="text-base font-bold text-zinc-900 flex items-center space-x-2">
+                    <LucideIcon name="keyboard" className="w-5 h-5 text-zinc-700" fallbackEmoji="⌨️" />
+                    <span>Keyboard Shortcuts</span>
+                  </h3>
+                  <button onClick={() => setShowShortcuts(false)} className="text-zinc-400 hover:text-zinc-700">
+                    <LucideIcon name="x" className="w-4 h-4" fallbackEmoji="✖" />
+                  </button>
+                </div>
+
+                <div className="space-y-2.5 text-xs font-mono">
+                  <div className="flex justify-between items-center p-2 bg-zinc-50 rounded border border-zinc-200">
+                    <span>Next Slide</span>
+                    <span className="bg-white px-2 py-0.5 rounded border text-zinc-800">Right Arrow / Space</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-zinc-50 rounded border border-zinc-200">
+                    <span>Previous Slide</span>
+                    <span className="bg-white px-2 py-0.5 rounded border text-zinc-800">Left Arrow</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-zinc-50 rounded border border-zinc-200">
+                    <span>Trainer Notes</span>
+                    <span className="bg-white px-2 py-0.5 rounded border text-zinc-800">N</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-zinc-50 rounded border border-zinc-200">
+                    <span>Slide Overview Grid</span>
+                    <span className="bg-white px-2 py-0.5 rounded border text-zinc-800">G</span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-zinc-50 rounded border border-zinc-200">
+                    <span>Fullscreen Mode</span>
+                    <span className="bg-white px-2 py-0.5 rounded border text-zinc-800">F</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowShortcuts(false)}
+                  className="w-full mt-5 py-2 bg-zinc-900 text-white rounded-lg text-xs font-medium hover:bg-zinc-800 transition"
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
