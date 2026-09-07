@@ -1,0 +1,256 @@
+{
+  "info": {
+    "_postman_id": "d1a90000-0000-4000-8000-000000000001",
+    "name": "Day 1 - User API (Laravel)",
+    "description": "Predefined requests for the Day 1 Users & Profiles CRUD API.\n\nImport, then send top to bottom. Edit the `base_url` collection variable if your app is on a different address. No auth is used in this training.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. List all users",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users"
+          ]
+        },
+        "description": "All seeded users; no password field (hidden)."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Create user",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users"
+          ]
+        },
+        "description": "Expect 201; note the returned id for request 7.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"New Dev\",\n  \"email\": \"newdev@test.com\",\n  \"password\": \"password123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Show one user",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "1"
+          ]
+        },
+        "description": "User 1 (Admin). Expect 200."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Update user",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "1"
+          ]
+        },
+        "description": "Expect 200 with updated user.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Renamed User\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get user's profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "1",
+            "profile"
+          ]
+        },
+        "description": "User 1's one-to-one profile. Expect 200."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Update user's profile",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users/1/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "1",
+            "profile"
+          ]
+        },
+        "description": "Create-or-update the profile. Expect 200.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"012-3456789\",\n  \"bio\": \"Team lead\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. Delete user",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users/12",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "12"
+          ]
+        },
+        "description": "Delete the user from request 2 (adjust the id). Expect 204."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Missing user (404)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/users/99999",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "99999"
+          ]
+        },
+        "description": "Nonexistent user. Expect 404 JSON."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://training-app.test",
+      "type": "string"
+    }
+  ]
+}

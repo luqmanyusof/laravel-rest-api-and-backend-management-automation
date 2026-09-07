@@ -42,10 +42,10 @@ own SOAP service — the harder direction, tackled once you understand calls →
 > before automating it, so the code never feels like magic.
 
 > **Carry-over:** you need Day 1's Laravel app running in Laragon — continue in the **same
-> `C:\laragon\www\training-app`** you set up on Day 1. If you're starting fresh on a new machine,
-> redo **Day 1 Topic 2** (`composer install` → `.env` + `key:generate` → `migrate` → `db:seed` →
-> `serve`) — that gives you the app plus a seeded `admin@test.com` user, which today's SOAP
-> examples use.
+> `C:\laragon\www\training-app`** you built on Day 1. If you're starting fresh on a new machine,
+> redo **Day 1 Topics 2 + 5–8** (`composer create-project` → set `.env` for MySQL →
+> `php artisan install:api` → `php artisan migrate:fresh --seed`) — Laragon then serves it at
+> `http://training-app.test` with a seeded `admin@test.com` user, which today's SOAP examples use.
 
 ---
 
@@ -75,15 +75,19 @@ php -r "echo class_exists('SoapClient') ? 'SOAP OK' : 'SOAP MISSING';"
   the leading semicolon so it reads `extension=soap`, save, reload Apache, and open a new
   terminal.
 
-> **If Day 1's `php artisan serve` is still running, stop it (Ctrl+C) and start it again.** The
-> API runs on that long-lived process, and a running server won't pick up a newly enabled
-> extension — otherwise Topic 3 fails with *Class "SoapClient" not found* even though the check
-> above prints `SOAP OK`.
+> **Reload Laragon after enabling the extension.** Apache (which serves `training-app.test`) only
+> picks up a newly enabled extension after a reload — **Menu → Apache → Reload**, or **Stop All**
+> then **Start All**. Skip this and Topic 3 fails with *Class "SoapClient" not found* even though
+> the terminal check above prints `SOAP OK`.
 
 ### 1.2 — Start Mailpit (safe test email, built into Laragon)
 
 Mailpit is a fake email server bundled with Laragon: your app "sends" mail and Mailpit catches
 it in a local web inbox, so nothing reaches real people. No signup, no external service.
+
+> **Recap:** you set Mailpit up on **Day 1 (Topic 10)** and already sent a test email through it.
+> If it's still running and your `.env` mail settings are in place, just confirm the inbox loads
+> and move on. The steps below are the quick version, in case you're starting fresh.
 
 1. In Laragon, click **Menu → Tools → Mailpit** and choose **Start** (some Laragon Full builds
    start it automatically with **Start All** — that's fine too).
@@ -195,6 +199,11 @@ words — reliable and needs no keys:
 ---
 
 ### Phase 1 — call the SOAP service by hand in Postman (before any code)
+
+> **Ready-made requests:** a Postman collection for all of today's SOAP calls is provided —
+> **`Day2-SOAP-API.postman_collection.json`** (in the course folder). **Import** it and you'll have
+> folder **A. By hand** (the external calls in this phase) and folder **B. Your app** (used in
+> Topics 3–5). You can follow the steps below by hand, or just send the matching request.
 
 **Step 1a — look at the contract (optional but useful).** In Postman, do a **GET** on
 `https://www.dataaccess.com/webservicesserver/NumberConversion.wso?WSDL`. The response is the
@@ -357,7 +366,7 @@ Route::post('/conversions', [ConversionController::class, 'store']);
 ```
 
 **Step 6 — test your Laravel endpoint in Postman.** This time you call *your* API (which calls
-the SOAP service for you): `POST http://127.0.0.1:8000/api/conversions`, Body → raw → JSON:
+the SOAP service for you): `POST http://training-app.test/api/conversions`, Body → raw → JSON:
 `{"number": 1234}`.
 
 **Checkpoint ✅**
@@ -524,7 +533,7 @@ fiddly, so use the ready-made one below** — just drop it in.
 
   <service name="UserInfoService">
     <port name="UserInfoPort" binding="tns:UserInfoBinding">
-      <soap:address location="http://127.0.0.1:8000/api/soap"/>
+      <soap:address location="http://training-app.test/api/soap"/>
     </port>
   </service>
 </definitions>
@@ -614,8 +623,10 @@ use App\Http\Controllers\SoapServerController;
 Route::match(['get', 'post'], '/soap', [SoapServerController::class, 'handle']);
 ```
 
-**Step 5 — test in Postman** by sending a raw SOAP request:
-1. New request: method **POST**, URL `http://127.0.0.1:8000/api/soap`.
+**Step 5 — test in Postman** by sending a raw SOAP request. *(This is requests **5** and **6** in
+folder **B. Your app** of the provided `Day2-SOAP-API.postman_collection.json` — import it to skip
+the typing.)*
+1. New request: method **POST**, URL `http://training-app.test/api/soap`.
 2. **Headers** tab — add two:
    - `Content-Type` = `text/xml; charset=utf-8`
    - `SOAPAction` = `"urn:UserInfo#getUserByEmail"` (keep the quotes)
@@ -633,7 +644,7 @@ Route::match(['get', 'post'], '/soap', [SoapServerController::class, 'handle']);
 ```
 
 > **Want to see the contract first?** In Postman, do a **GET** on
-> `http://127.0.0.1:8000/api/soap?wsdl` — it returns the raw WSDL XML your service publishes.
+> `http://training-app.test/api/soap?wsdl` — it returns the raw WSDL XML your service publishes.
 
 **Checkpoint ✅**
 - A valid email returns a SOAP XML response containing `name`, `email`, `createdAt`.
@@ -656,7 +667,9 @@ Route::match(['get', 'post'], '/soap', [SoapServerController::class, 'handle']);
 class representing "a message to send someone" that goes out by email.
 Because Mailpit runs on your own machine, there are **no credentials** — just a host and port.
 
-**Step 1 — point `.env` at Mailpit** (SMTP on `127.0.0.1:1025`, no username/password/encryption):
+**Step 1 — point `.env` at Mailpit** (SMTP on `127.0.0.1:1025`, no username/password/encryption).
+*You already did this on Day 1 (Topic 10) — confirm the lines are present, or set them if you're
+starting fresh:*
 
 ```dotenv
 MAIL_MAILER=smtp
@@ -734,10 +747,11 @@ Route::get('/test-mail', function () {
 });
 ```
 
-Visit `http://127.0.0.1:8000/api/test-mail`.
+Visit `http://training-app.test/api/test-mail`.
 
 **Checkpoint ✅** The email appears in your **Mailpit inbox** (`http://localhost:8025`) within a
-second or two, with red "error" styling and your subject line.
+second or two, with red "error" styling and your subject line. **Click it to open** and read the
+headers and body — the same way you viewed the Day 1 test email (Day 1, Topic 10).
 
 **Common problems**
 - *Nothing arrives* → Mailpit isn't running (start it in Laragon), or you forgot

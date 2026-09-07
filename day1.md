@@ -1,35 +1,74 @@
-# Day 1 — Laravel REST API: Validation, Error Handling & Security
+# Day 1 — Build a Laravel 12 REST API (Users & Profiles)
 
 > *Part of **Practical Laravel Backend Integration & Automation** — REST & SOAP APIs, SFTP file
 > transfers, and cron-scheduled jobs (Day 1 of 3).*
 
 **Use case for the whole course:** a **User Management** API (Application Programming Interface).
-Today you build a full REST (Representational State Transfer) API to create, read, update and
-delete users — with validation, consistent JSON (JavaScript Object Notation) errors, and
-token-based login using Laravel Sanctum. You test everything in Postman.
+Today you start from **nothing** — you create a brand-new Laravel 12 project, build a REST
+(Representational State Transfer) **CRUD** (Create, Read, Update, Delete) API for users, add a
+related **`user_profiles`** table with a migration, **seed** realistic data (a profile for every
+user), and test the whole thing in **Postman**.
 
 **Stack:** Laravel 12, PHP (Hypertext Preprocessor) 8.3, Composer, MySQL (the SQL — Structured
-Query Language — database, via **Laragon**), Postman, VS Code. *(A provided app is set up with
-`composer install`.)*
+Query Language — database, via **Laragon**), Postman, VS Code.
+
+**New to Laravel? A 2-minute primer.** Laravel is the most popular **PHP web framework** — a
+toolkit of ready-made pieces (routing, database access, mail, and more) so you don't build a web
+app from scratch. It's organised around **MVC (Model–View–Controller)**:
+
+- **Model** — represents your data, usually one class per database table (e.g. `User`). Laravel
+  models use **Eloquent**, its ORM (Object-Relational Mapper), so you read and write rows as PHP
+  objects instead of writing raw SQL.
+- **View** — the HTML shown to a person (Laravel's templates are called **Blade**). An **API**
+  skips views and returns **JSON** instead.
+- **Controller** — the code that handles a request: it takes the input, uses models to touch the
+  database, and returns a response.
+
+**The request lifecycle in one line:** a request hits a **route** → the route calls a
+**controller** method → the controller uses **models** to read/write the database → it returns a
+**response** (JSON, for an API).
+
+**The folders you'll actually touch:**
+
+| Folder / file | What lives there |
+|---|---|
+| `app/Models/` | Eloquent models (your tables as classes) |
+| `app/Http/Controllers/` | Controllers (request handlers) |
+| `routes/web.php` · `routes/api.php` | Browser routes · API routes |
+| `database/migrations/` | Table definitions — your schema written as code |
+| `database/factories/` · `database/seeders/` | Sample/test data generators |
+| `.env` | Environment config — database, mail, secrets |
+| `artisan` | The command-line tool: `php artisan ...` generates code, runs migrations, serves the app |
+
+**Terms you'll meet today:** a **migration** builds or changes a table; a **factory/seeder** fills
+tables with data; an **Eloquent relationship** links tables (a user *has one* profile); **route
+model binding** lets Laravel fetch a record straight from the id in the URL.
 
 **What you build today**
-- `GET/POST/PUT/DELETE /api/users` — a validated, secured **CRUD** (Create, Read, Update, Delete)
-  API
-- `POST /api/register` and `POST /api/login` — issue an API token
-- Clean JSON errors for 401 / 403 / 404 / 422 / 500
+- A fresh **Laravel 12 project** running on Laragon
+- `GET/POST/PUT/DELETE /api/users` — a Users **CRUD** API returning JSON (JavaScript Object
+  Notation)
+- A **`user_profiles`** table (one-to-one with users), created by a migration
+- **Seed data:** ~10 users, each with a linked profile
+- `GET/PUT /api/users/{id}/profile` — read and update a user's profile
+- A **Postman collection** that exercises every endpoint
+- **Mailpit** configured + a **simple test email** sent into a local inbox (the base for Day 2's
+  alerts)
 
-**What is NOT in scope today:** SOAP (Simple Object Access Protocol), email, SFTP (SSH File
-Transfer Protocol), scheduling (Days 2–3).
+**What is NOT in scope today:** input validation, custom error handling, and authentication
+(Laravel Sanctum) — Day 1 stays focused on **building, seeding and testing** the API. (We do send
+one simple test email at the end; the *automatic failure alerts* built on it are Day 2. SOAP —
+Simple Object Access Protocol — is Day 2; SFTP — SSH File Transfer Protocol — and cron are Day 3.)
 
 **How this day builds (each topic is a prerequisite for the next — easy first):**
-1. Install the tools → 2. Get the app running → 3. Learn the REST vocabulary (concept) →
-4. Tour the app to see where REST fits → 5. Build a **plain CRUD API that just works** (no rules
-yet — the easy win) → 6. Add validation → 7. Shape the JSON + handle errors cleanly →
-8. Lock it down with token auth → 9. Extend it with a second, related table.
+1. Install the tools → 2. Create the blank project + database → 3. Learn the REST vocabulary
+(concept) → 4. Tour the fresh project → 5. Build the **Users CRUD API** → 6. **Seed** the users
+table → 7. Add the related **`user_profiles`** table (migration + relationship) → 8. **Seed
+profiles** + add the profile endpoints → 9. **Test everything in Postman** → 10. **Send a test
+email** with Mailpit (a bridge to Day 2).
 
-> We deliberately build **easy first**: get a working (but unprotected) API in Topic 5, then
-> layer on validation, clean errors and security one topic at a time. Nothing is "magic" later
-> because you built the plain version first.
+> We build **bottom-up**: a working project first, then the API, then the data, then the related
+> table, then the tests. Nothing is "magic" later because you built each layer yourself.
 
 > **This guide assumes you have installed nothing.** Topic 1 installs every tool from zero.
 > If your machine is already set up, skim Topic 1 and jump to the verification at its end.
@@ -39,8 +78,8 @@ yet — the easy win) → 6. Add validation → 7. Shape the JSON + handle error
 ## Topic 1 — Install and verify your tools
 
 You need: **Laragon** (PHP + MySQL, and it bundles Composer), **Composer** (the PHP package
-manager — you'll use it to install the app's dependencies), **Postman** (to test the API), and
-**VS Code** (to edit code). Do them in order.
+manager — you'll use it to create the project and manage its libraries), **Postman** (to test the
+API), and **VS Code** (to edit code). Do them in order.
 
 ### 1.1 — Install Laragon (PHP + Composer + MySQL)
 
@@ -66,7 +105,7 @@ always use it for this course): in the Laragon window click the **Terminal** but
 Verify PHP in that terminal:
 
 ```bash
-php -v          # must say PHP 8.3.x
+php -v          # should say PHP 8.3.x (8.2.x is also fine)
 ```
 
 > If `php -v` shows an old version, redo the "Make sure PHP is 8.3" step above and open a
@@ -74,8 +113,8 @@ php -v          # must say PHP 8.3.x
 
 ### 1.2 — Install / verify Composer (PHP package manager)
 
-Composer downloads the libraries a Laravel app depends on. **Laragon already bundles it**, so
-first just check — in the Laragon terminal:
+Composer creates Laravel projects and downloads the libraries they depend on. **Laragon already
+bundles it**, so first just check — in the Laragon terminal:
 
 ```bash
 composer -V     # should print "Composer version 2.x"
@@ -119,46 +158,32 @@ composer -V     # should print "Composer version 2.x"
 
 ---
 
-## Topic 2 — Get the Laravel application running
+## Topic 2 — Create a new Laravel 12 project
 
-**Goal:** set up the **provided app**, install its dependencies with Composer, connect it to the
-database, and run it.
+**Goal:** create a fresh Laravel 12 project with Composer, point it at MySQL, and get it running
+in the browser.
 
-**What the provided app already contains (so you don't build it):** a Laravel 12 project with the
-built-in `User` model + `users` migration + a seeder (a class that fills tables with sample data), and a small read-only **`/users`** web page
-(a `UserWebController`, a Blade view — Laravel's HTML template format — and a `web.php` route).
-You'll **add the API layer** on top
-— you won't create the app from scratch. *(No provided app? See the fallback at the end of this
-topic.)*
-
-**Step 1 — put the app in place.** Unzip the provided **`training-app.zip`** into `C:\laragon\www\`
-so the path is **`C:\laragon\www\training-app`**. Then, in the Laragon terminal:
+**Step 1 — create the project.** In the Laragon terminal, go to Laragon's web root and let
+Composer build a new Laravel 12 app called `training-app`:
 
 ```bash
-cd C:\laragon\www\training-app
+cd C:\laragon\www
+composer create-project laravel/laravel:^12.0 training-app
+cd training-app
 ```
 
-**Step 2 — install the PHP dependencies with Composer** (this downloads Laravel's libraries into
-a `vendor/` folder — the app can't run without it):
+> `create-project` downloads Laravel 12 and its libraries into a new `training-app` folder, copies
+> `.env.example` to **`.env`**, and generates your app key automatically. It takes a minute or two.
 
-```bash
-composer install
-```
-
-**Step 3 — set up the environment file:**
-
-```bash
-copy .env.example .env      # create your local config
-php artisan key:generate    # generate the app encryption key
-```
-
-**Step 4 — create the database.** In the main Laragon window click **Database** — this opens
+**Step 2 — create the database.** In the main Laragon window click **Database** — this opens
 **HeidiSQL** already connected to MySQL. Right-click the connection name (left panel) →
 **Create new → Database** → name it **`training`** → **OK**.
 
 > Prefer the terminal? `mysql -u root -e "CREATE DATABASE training;"` does the same thing.
 
-**Step 5 — point Laravel at the database.** Open `.env` in VS Code (`code .`) and set:
+**Step 3 — point Laravel at MySQL.** A fresh Laravel 12 project uses **SQLite** by default, so you
+must switch it to MySQL. Open the project in VS Code (`code .`), open **`.env`**, and set the
+database lines to exactly this (uncomment the `DB_*` lines if they start with `#`):
 
 ```dotenv
 DB_CONNECTION=mysql
@@ -172,38 +197,39 @@ DB_PASSWORD=
 > In Laragon, MySQL's user is `root` with an **empty** password. If yours has a password, put it
 > in `DB_PASSWORD`.
 
-**Step 6 — create the tables, seed users, and run:**
+**Step 4 — create the tables:**
 
 ```bash
-php artisan migrate      # creates the users table
-php artisan db:seed      # adds ~10 test users + an admin (login: admin@test.com)
-php artisan serve        # starts the app — leave this terminal running
+php artisan migrate      # creates the default tables (users, cache, jobs) in the training DB
 ```
 
-Open a **second** Laragon terminal for the remaining commands today.
+**Step 5 — open the app.** Because the project lives in `C:\laragon\www`, **Laragon serves it
+automatically** at **`http://training-app.test`** — no `php artisan serve` needed. (Laragon
+auto-creates that `.test` address and points it at the project's `public/` folder.) If the address
+doesn't resolve the first time, click **Menu → Reload** in Laragon (or **Start All** again).
+
+> **`training-app.test` won't load?** Make sure Laragon's **Menu → Preferences → Auto virtual
+> hosts** is on, then **Reload**. As a fallback you can use `http://localhost/training-app/public`.
+> Keep a Laragon terminal open for the `php artisan` commands in later topics.
 
 **Checkpoint ✅**
-- Visiting `http://127.0.0.1:8000/users` shows the provided read-only list of seeded users.
-- In HeidiSQL, the `training` database has a `users` table with rows.
+- Visiting `http://training-app.test` shows the **Laravel welcome page**.
+- In HeidiSQL, the `training` database now has a `users` table (empty for now).
 
 **Common problems**
-- *`composer install` fails* → make sure `composer -V` works (Topic 1.2) and you're **inside**
-  `C:\laragon\www\training-app` (where `composer.json` lives).
-- *"could not find driver"* → in Laragon, **Menu → PHP → Extensions**, tick **pdo_mysql**, then
+- *`could not find driver`* → in Laragon, **Menu → PHP → Extensions**, tick **pdo_mysql**, then
   reload Laragon and open a new terminal.
-- *"Access denied for user root"* → your MySQL has a password; put it in `.env` → `DB_PASSWORD`.
-- *"No application encryption key"* → you skipped `php artisan key:generate` (Step 3).
-
-**No provided app? (fallback)** Create a fresh Laravel 12 project instead of Steps 1–2 — it ships
-the same `User` model and `users` migration (you'll just lack the read-only `/users` page):
-`composer create-project laravel/laravel:^12.0 training-app`, then continue from Step 3.
+- *`Access denied for user 'root'`* → your MySQL has a password; put it in `.env` → `DB_PASSWORD`.
+- *`Database 'training' doesn't exist`* → you skipped Step 2, or misspelled the name in `.env`.
+- *Still hitting SQLite errors* → `DB_CONNECTION` is still `sqlite`; fix `.env` (Step 3) and run
+  `php artisan config:clear`.
 
 ---
 
 ## Topic 3 — REST fundamentals (concept)
 
-**Prerequisite:** the app is running (Topic 2). **Why this comes first:** you need the REST
-vocabulary *before* you look at the code, or the tour in Topic 4 won't mean much.
+**Prerequisite:** the project is running (Topic 2). **Why this comes first:** you need the REST
+vocabulary *before* you build endpoints, or Topic 5 won't mean much.
 
 **Goal:** speak REST before writing it. Short section — read, then we code.
 
@@ -218,14 +244,12 @@ Transfer Protocol) verbs to actions on that resource, each at a URL (Uniform Res
 | PUT/PATCH | `/api/users/5` | update user 5 | 200 OK |
 | DELETE | `/api/users/5` | delete user 5 | 204 No Content |
 
-**Status codes you must know**
+**Status codes you should know**
 - **2xx success:** 200 OK, 201 Created, 204 No Content.
-- **4xx you caused it (client):** 400 bad request, 401 not logged in, 403 forbidden,
-  404 not found, 422 validation failed.
+- **4xx you caused it (client):** 400 bad request, 404 not found.
 - **5xx we broke it (server):** 500 internal error.
 
 **Rules of thumb**
-- APIs are **stateless** — every request carries its own auth (a token), no sessions.
 - Responses are **JSON**, always with a sensible status code.
 - The URL names the *thing* (`/users`); the *verb* says what to do. Never `/getUsers`.
 
@@ -233,63 +257,86 @@ Transfer Protocol) verbs to actions on that resource, each at a URL (Uniform Res
 
 ---
 
-## Topic 4 — Tour the app: where the API layer fits
+## Topic 4 — Tour a fresh Laravel project
 
 **Prerequisite:** the REST vocabulary from Topic 3.
 
-**Goal:** understand the pieces you'll touch today. You are **adding** an API next to the
-existing app — not rewriting it.
+**Goal:** see what a brand-new Laravel 12 project already gives you — so you know what you're
+building **on top of**, and what you'll **add**.
 
-**Open the project in VS Code** (`code .` from the project folder) so you can see these files.
+**Open the project in VS Code** (`code .` from the project folder) and look at these:
 
 | File / folder | What it is |
 |---|---|
-| `app/Models/User.php` | The User model (Eloquent — Laravel's database layer, one class per table). Maps to the `users` table. |
-| `database/migrations/*_create_users_table.php` | Defines the `users` columns. |
-| `routes/web.php` | Browser (HTML) routes. |
-| `routes/api.php` | **API (JSON) routes — we create this in Topic 5.** |
-| `app/Http/Controllers/` | Where controller classes live. |
+| `app/Models/User.php` | The **User model** (Eloquent — Laravel's database layer, one class per table). Ships ready to use. |
+| `database/migrations/*_create_users_table.php` | Defines the `users` columns (you ran this in Topic 2). |
+| `database/factories/UserFactory.php` | A **factory** — generates fake users for seeding/testing. |
+| `database/seeders/DatabaseSeeder.php` | The **seeder** — code that fills tables with sample data. |
+| `routes/web.php` | Browser (HTML) routes. The welcome page lives here. |
+| `routes/api.php` | **API (JSON) routes — doesn't exist yet; you create it in Topic 5.** |
 
-**Look at the User model.** Open `app/Models/User.php`. Note two security-relevant lines:
+**Look at the User model.** Open `app/Models/User.php`. Note three things Laravel already set up
+for you:
 
 ```php
-protected $fillable = ['name', 'email', 'password'];   // mass-assignment allow-list
+protected $fillable = ['name', 'email', 'password'];   // fields that can be mass-assigned
 
-protected $hidden = ['password', 'remember_token'];     // never sent in JSON
+protected $hidden = ['password', 'remember_token'];     // never included in JSON
+
+protected function casts(): array
+{
+    return [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',        // any password you set is auto-hashed
+    ];
+}
 ```
 
-- `$fillable` = the only fields that can be set in bulk (stops someone injecting
-  `is_admin=true`).
-- `$hidden` = fields stripped out of any JSON conversion (so passwords never leak).
+- `$fillable` = the only fields you can set in bulk with `User::create([...])`.
+- `$hidden` = fields stripped out of any JSON conversion (so **passwords never leak** in a
+  response — even without extra work).
+- `'password' => 'hashed'` = when you save a password, Laravel **hashes it automatically**. You
+  never store plain text.
 
-**See the contrast for real.** The provided app already includes a tiny **web** feature: a route
-in `routes/web.php`, a `UserWebController`, and `resources/views/users.blade.php` that render the
-`/users` page you saw in Topic 2. Open `http://127.0.0.1:8000/users` — that's the **same User
-data returned as HTML**. Today you'll build the **API** version of the same data, returned as
-**JSON**.
+**Key idea:** the User model, its table and its factory already exist. Today you **add an API
+layer** on top (Topic 5), **seed data** (Topic 6), and **extend it with a related table**
+(Topics 7–8).
 
-**Key idea:** **web routes return HTML; API routes return JSON.** They share the same models and
-database. The web side is already built (reuse it as your reference); today you work almost
-entirely in `routes/api.php` and a new API controller.
-
-**Checkpoint ✅** You can point to the User model, the users migration, the existing `/users`
-web page, and where the API routes will live.
+**Checkpoint ✅** You can point to the User model, the users migration, the User factory, and
+where the API routes will live.
 
 ---
 
-## Topic 5 — API routes, resource controller & route model binding
+## Topic 5 — Build the Users CRUD API
 
-**Goal:** create the five CRUD endpoints returning JSON.
+**Goal:** create the five CRUD endpoints for users, returning JSON.
 
-**Step 1 — enable API routing + Sanctum.** Laravel 12 ships without `routes/api.php`. One command
-creates it *and* installs Sanctum via Composer (you'll use Sanctum for auth in Topic 8):
+**Step 1 — enable API routing.** A fresh Laravel 12 ships without `routes/api.php`. One command
+creates it and wires up the `/api` prefix:
 
 ```bash
 php artisan install:api
 ```
 
-- When asked to run migrations, answer **yes** (it adds the `personal_access_tokens` table).
+- When asked to run migrations, answer **yes**.
 - You now have `routes/api.php`, and its routes are automatically prefixed with `/api`.
+
+> `install:api` also installs **Laravel Sanctum** (token authentication). We're **not using auth
+> today**, so just ignore the extra files — they're there if you add login later.
+
+**This is what Laravel generates** — the fresh `routes/api.php` starts with a single default
+route (which we'll replace in Step 3):
+
+```php
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+```
 
 **Step 2 — create an API controller.** The `--api` flag scaffolds the 5 CRUD methods (no
 `create`/`edit` form methods, since JSON APIs don't render forms):
@@ -298,12 +345,77 @@ php artisan install:api
 php artisan make:controller Api/UserController --api
 ```
 
-**Step 3 — register the routes.** Open `routes/api.php` and add:
+**This is what Laravel generates** — `app/Http/Controllers/Api/UserController.php` with five
+**empty** methods (note the `//` bodies and the plain `string $id` parameters). You'll replace it
+in Step 4:
 
 ```php
-use App\Http\Controllers\Api\UserController;
+<?php
 
-Route::apiResource('users', UserController::class);
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class UserController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+}
+```
+
+**Step 3 — register the routes.** Open `routes/api.php` (the default file from Step 1) and add the
+two **marked** lines, so the whole file reads:
+
+```php
+<?php
+
+use App\Http\Controllers\Api\UserController;   // ← add this
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+Route::apiResource('users', UserController::class);   // ← add this
 ```
 
 Confirm the routes exist:
@@ -312,8 +424,10 @@ Confirm the routes exist:
 php artisan route:list --path=api
 ```
 
-**Step 4 — fill in the controller.** Open `app/Http/Controllers/Api/UserController.php` and
-replace it with:
+**Step 4 — fill in the controller.** Replace the whole scaffold from Step 2 with the version
+below. Two things change from the generated file: the empty `//` bodies get real code, and the
+`string $id` parameters become **`User $user`** (route model binding — Laravel fetches the record
+for you):
 
 ```php
 <?php
@@ -323,24 +437,20 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
     // GET /api/users
     public function index()
     {
-        return User::all();               // Laravel auto-converts to JSON (200)
+        return User::all();                 // Laravel auto-converts to JSON (200)
     }
 
     // POST /api/users
     public function store(Request $request)
     {
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),  // NEVER store plain text
-        ]);
+        // $fillable limits which fields are saved; the 'hashed' cast hashes the password for us
+        $user = User::create($request->only(['name', 'email', 'password']));
 
         return response()->json($user, 201);   // 201 Created
     }
@@ -367,421 +477,97 @@ class UserController extends Controller
 }
 ```
 
-**What "route model binding" does:** because the parameter is type-hinted `User $user`,
-Laravel turns `/api/users/5` into `User::findOrFail(5)` automatically. If the user doesn't
-exist it throws a "not found" exception — which we turn into clean JSON in Topic 7.
+**What "route model binding" does:** because the parameter is type-hinted `User $user`, Laravel
+turns `/api/users/5` into `User::findOrFail(5)` automatically. If the user doesn't exist, an API
+(JSON) request gets a clean **404** with no extra work.
 
-**Checkpoint ✅** In Postman (or a browser for GET), `GET http://127.0.0.1:8000/api/users`
-returns a JSON array of users. Notice **passwords are absent** — that's `$hidden` working.
+**Step 5 — a quick smoke test in Postman.** (Full testing is Topic 9 — this is just to prove the
+endpoint responds.)
+1. New request: **POST** `http://training-app.test/api/users`.
+2. **Body** tab → **raw** → set the dropdown to **JSON** → paste:
+   ```json
+   { "name": "Smoke Test", "email": "smoke@test.com", "password": "password123" }
+   ```
+3. **Send** → you get **201** and the new user as JSON. Notice **no password field** — that's
+   `$hidden` working.
+4. **GET** `http://training-app.test/api/users` → returns a JSON array containing that user.
 
-> ⚠️ Right now `store` has **no validation** and **no auth**. That's intentional — we fix
-> validation in Topic 6 and lock it down in Topic 8.
+**Checkpoint ✅** `POST /api/users` creates a user (201) and `GET /api/users` lists it — the CRUD
+API works. (The table is nearly empty; we bulk-fill it next.)
 
----
-
-## Topic 6 — Validation with Form Requests
-
-**Goal:** reject bad input with automatic, consistent 422 responses — without cluttering the
-controller.
-
-**Concept (30 sec):** A **Form Request** is a dedicated class that holds validation rules.
-Type-hint it in the controller and Laravel validates *before* your code runs. On an API
-request, a failure automatically returns **422** with a JSON list of errors.
-
-**Step 1 — create two request classes:**
-
-```bash
-php artisan make:request StoreUserRequest
-php artisan make:request UpdateUserRequest
-```
-
-**Step 2 — `app/Http/Requests/StoreUserRequest.php`:**
-
-```php
-<?php
-
-namespace App\Http\Requests;
-
-use Illuminate\Foundation\Http\FormRequest;
-
-class StoreUserRequest extends FormRequest
-{
-    public function authorize(): bool
-    {
-        return true;   // authorisation handled by Sanctum middleware (Topic 8)
-    }
-
-    public function rules(): array
-    {
-        return [
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'email.unique'       => 'That email address is already registered.',
-            'password.confirmed' => 'The password confirmation does not match.',
-        ];
-    }
-}
-```
-
-> `confirmed` means the request must also include a `password_confirmation` field that matches.
-> `messages()` overrides the default wording.
-
-**Step 3 — `app/Http/Requests/UpdateUserRequest.php`** (email must ignore the current user so
-an unchanged email doesn't fail the unique rule):
-
-```php
-<?php
-
-namespace App\Http\Requests;
-
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
-
-class UpdateUserRequest extends FormRequest
-{
-    public function authorize(): bool
-    {
-        return true;
-    }
-
-    public function rules(): array
-    {
-        $userId = $this->route('user')->id;
-
-        return [
-            'name'  => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'required', 'email', Rule::unique('users')->ignore($userId)],
-        ];
-    }
-}
-```
-
-> `sometimes` = only validate the field if it's present (allows partial updates).
-
-**Step 4 — use them in the controller.** Add the two `use` lines at the **top** of the file
-(alongside the existing `use` statements, under `<?php`), then swap the two type-hints and read
-the validated data:
-
-```php
-use App\Http\Requests\StoreUserRequest;
-use App\Http\Requests\UpdateUserRequest;
-
-public function store(StoreUserRequest $request)
-{
-    $data = $request->validated();               // only the rule'd fields, all clean
-    $data['password'] = Hash::make($data['password']);
-
-    $user = User::create($data);
-    return response()->json($user, 201);
-}
-
-public function update(UpdateUserRequest $request, User $user)
-{
-    $user->update($request->validated());
-    return $user;
-}
-```
-
-**Checkpoint ✅** In Postman, `POST /api/users` with an empty body returns **422** and a JSON
-`errors` object listing each missing field. A valid body returns **201** with the new user.
-
-**Security note:** `$request->validated()` (not `$request->all()`) means only approved fields
-ever reach the database — a second layer on top of `$fillable`.
+> ⚠️ There's deliberately **no input validation** today — send well-formed JSON. Validation is a
+> Day-2-and-beyond concern; today is about building and testing the shape of the API.
 
 ---
 
-## Topic 7 — API Resources & consistent error handling
+## Topic 6 — Seed the users table
 
-**Goal:** (a) control exactly what JSON a user looks like, and (b) make **every** error come
-back as clean JSON — never an HTML error page.
+**Goal:** fill the `users` table with realistic sample data using Laravel's **factory + seeder**,
+so the API has plenty to return.
 
-### 7a — Shape the output with an API Resource
+**Concept.** A **factory** describes how to build one fake record; a **seeder** decides how many
+to create and with what data. The `UserFactory` already exists — you just tell the seeder to use
+it.
 
-**Concept:** an **API Resource** is a class that formats a model into JSON. It guarantees a
-stable shape and lets you hide/rename fields.
+**Step 1 — edit the seeder.** Open `database/seeders/DatabaseSeeder.php` and replace the `run`
+method so it creates a known admin plus ten random users:
+
+```php
+use App\Models\User;
+
+public function run(): void
+{
+    // A known account you'll reuse on Day 2
+    User::factory()->create([
+        'name'  => 'Admin',
+        'email' => 'admin@test.com',
+    ]);
+
+    // Ten more random users
+    User::factory(10)->create();
+}
+```
+
+> The factory sets a default password of `password` (already hashed) and a random name/email for
+> each user. `admin@test.com` gets a known email so later exercises can look it up.
+
+**Step 2 — reset and seed the database:**
 
 ```bash
-php artisan make:resource UserResource
+php artisan migrate:fresh --seed
 ```
 
-Edit `app/Http/Resources/UserResource.php`:
-
-```php
-public function toArray(Request $request): array
-{
-    return [
-        'id'         => $this->id,
-        'name'       => $this->name,
-        'email'      => $this->email,
-        'created_at' => $this->created_at->toDateTimeString(),
-        // note: no password field — it can never leak from here
-    ];
-}
-```
-
-Use it in the controller:
-
-```php
-use App\Http\Resources\UserResource;
-
-public function index()
-{
-    return UserResource::collection(User::all());
-}
-
-public function show(User $user)
-{
-    return new UserResource($user);
-}
-
-public function store(StoreUserRequest $request)
-{
-    $data = $request->validated();
-    $data['password'] = Hash::make($data['password']);
-    $user = User::create($data);
-
-    return (new UserResource($user))->response()->setStatusCode(201);
-}
-```
-
-### 7b — Global JSON error handling
-
-**The problem:** by default, hitting a missing user or an unauthenticated route can return an
-HTML page. API clients need JSON.
-
-**In Laravel 12, exception handling lives in `bootstrap/app.php`.** Open it. Put the `use` lines
-below at the **very top** of the file (right after `<?php`, with any existing `use` statements);
-the `->withExceptions(...)` block then replaces the **existing** empty `->withExceptions(...)`
-call already in that file — do not paste the `use` lines inside it:
-
-```php
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Throwable;
-
-->withExceptions(function (Exceptions $exceptions) {
-    $exceptions->render(function (Throwable $e, Request $request) {
-        // Only intervene for API/JSON requests; let the web app show HTML errors
-        if (! $request->is('api/*') && ! $request->expectsJson()) {
-            return null;
-        }
-
-        if ($e instanceof ValidationException) {
-            return response()->json([
-                'message' => 'The given data was invalid.',
-                'errors'  => $e->errors(),
-            ], 422);
-        }
-
-        if ($e instanceof AuthenticationException) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        if ($e instanceof ModelNotFoundException || $e instanceof NotFoundHttpException) {
-            return response()->json(['message' => 'Resource not found.'], 404);
-        }
-
-        // Catch-all: hide the real error in production, show it while developing
-        return response()->json([
-            'message' => config('app.debug') ? $e->getMessage() : 'Server error.',
-        ], 500);
-    });
-})
-```
-
-**Security note:** the catch-all only reveals the real message when `APP_DEBUG=true`
-(development). In production you set `APP_DEBUG=false` so internal details never leak.
+> `migrate:fresh` drops every table and re-creates them, then `--seed` runs your seeder. Use it
+> whenever you want a clean, known dataset. **It wipes all data** — which is exactly what we want
+> here.
 
 **Checkpoint ✅**
-- `GET /api/users/99999` (missing) → **404** `{"message":"Resource not found."}`
-- `POST /api/users` with bad data → **422** with an `errors` object.
-- No request ever returns an HTML error page.
+- In HeidiSQL, the `users` table has **11 rows** (Admin + 10).
+- `GET http://training-app.test/api/users` returns all 11 as JSON, with `admin@test.com` among them.
+
+**Common problems**
+- *`Class "App\Models\User" not found`* → you forgot the `use App\Models\User;` line at the top of
+  `DatabaseSeeder.php`.
+- *Only 1 user appears* → you didn't replace the default `run()` body, or didn't re-run
+  `migrate:fresh --seed`.
 
 ---
 
-## Topic 8 — Sanctum token authentication + Postman (hands-on finale)
+## Topic 7 — A related table: user_profiles (one-to-one)
 
-**Goal:** require a valid token to manage users. Register/login to get a token, then use it on
-every protected request. Prove the whole flow in Postman.
+**Goal:** add a second table that **belongs to** a user, and wire up the Eloquent relationship. A
+user **has one** profile (phone + bio).
 
-**Concept:** **Sanctum** issues a long random **token** to a logged-in user. The client sends
-it on each request as `Authorization: Bearer <token>`. No token = 401.
+**Concept.** A **one-to-one** relationship: each row in `users` has (at most) one matching row in
+`user_profiles`, linked by a `user_id` column.
 
-**Step 1 — enable tokens on the User model.** In `app/Models/User.php`, add the `HasApiTokens`
-trait (a trait is a bundle of reusable methods mixed into a class; running `install:api` in
-Topic 5 may already have added it — if so, just confirm it's there):
-
-```php
-use Laravel\Sanctum\HasApiTokens;
-
-class User extends Authenticatable
-{
-    use HasApiTokens, /* ...existing traits... */;
-}
-```
-
-**Step 2 — create an auth controller:**
-
-```bash
-php artisan make:controller Api/AuthController
-```
-
-`app/Http/Controllers/Api/AuthController.php`:
-
-```php
-<?php
-
-namespace App\Http\Controllers\Api;
-
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreUserRequest;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
-
-class AuthController extends Controller
-{
-    // POST /api/register
-    public function register(StoreUserRequest $request)
-    {
-        $data = $request->validated();
-        $data['password'] = Hash::make($data['password']);
-        $user = User::create($data);
-
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        return response()->json(['user' => $user, 'token' => $token], 201);
-    }
-
-    // POST /api/login
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email'    => ['required', 'email'],
-            'password' => ['required'],
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        // Same generic message whether email or password is wrong (don't leak which)
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
-        }
-
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        return response()->json(['user' => $user, 'token' => $token], 200);
-    }
-
-    // POST /api/logout — revoke the token used for this request
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out.'], 200);
-    }
-}
-```
-
-**Step 3 — split public vs protected routes.** Rewrite `routes/api.php`:
-
-```php
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\UserController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
-// Public — no token needed
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login',    [AuthController::class, 'login']);
-
-// Protected — valid Sanctum token required
-// (middleware = a checkpoint that runs before the controller; here it rejects requests with no valid token)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', fn (Request $request) => $request->user());
-    Route::apiResource('users', UserController::class);
-});
-```
-
-**Step 4 — test the full flow in Postman.** (First time using Postman — follow closely.)
-
-1. **Create a Collection** (left sidebar → **Collections → +** → name it "User API"). A
-   collection is just a folder for your saved requests.
-2. **Create an Environment** so you don't retype the URL and token: top-right, click the
-   **Environments** icon (or **Environments** in the left sidebar) → **+** → name it "Local".
-   Add two variables:
-   - `base_url` with value `http://127.0.0.1:8000`
-   - `token` (leave the value blank)
-   Click **Save**, then **select "Local"** in the environment dropdown (top-right).
-3. **Register a user.** New request (**+** tab): method **POST**, URL
-   `{{base_url}}/api/register`. Go to the **Body** tab → choose **raw** → in the dropdown on
-   the right change **Text** to **JSON**. Paste:
-   ```json
-   {
-     "name": "New Dev",
-     "email": "newdev@test.com",
-     "password": "password123",
-     "password_confirmation": "password123"
-   }
-   ```
-   Click **Send**. You get back JSON with a `token`. *(Register a **new** email like
-   `newdev@test.com` — `admin@test.com` is already seeded, so registering that one fails the
-   `unique` rule with a **422**.)*
-4. **Auto-save the token.** On that same request, open the **Scripts** tab → **Post-response**,
-   and paste:
-   ```javascript
-   pm.environment.set("token", pm.response.json().token);
-   ```
-   Now every login/register automatically stores the token in your `{{token}}` variable.
-5. **Prove protection works.** New request: **GET** `{{base_url}}/api/users`. Send it with **no
-   auth** → you get **401 Unauthenticated**.
-6. **Add the token.** On that request open the **Authorization** tab → **Auth Type: Bearer
-   Token** → in the Token box type `{{token}}`. Send again → **200** with the user list.
-7. **Exercise the rest** (all with the Bearer token set): create (POST `/api/users`) — note the
-   `id` in the response — then show/update/delete **that** id (e.g. GET/PUT/DELETE
-   `/api/users/12`). Don't delete the user you logged in as, or your token stops working.
-
-> **Postman quick reference:** Body must be **raw → JSON** (not Text). Bearer token goes in the
-> **Authorization** tab. A 419 error means you hit a web route by mistake — API routes under
-> `/api` don't use CSRF (Cross-Site Request Forgery protection). A parse error means the body
-> isn't set to JSON.
-
-**Checkpoint ✅ (end-of-day goal)**
-- Without a token, protected routes return **401**.
-- With a token, full CRUD works and returns correctly shaped JSON.
-- Validation errors return **422**; missing records return **404**.
-
----
-
-## Topic 9 — A second table: user profiles (relationships)
-
-**Goal:** add a simple related table to show how one resource links to another. A user **has
-one** profile (phone + bio). This reinforces everything from Topics 5–8 and introduces Eloquent
-**relationships**.
-
-**Concept.** A **one-to-one** relationship: each row in `users` has (at most) one matching row
-in `user_profiles`, linked by a `user_id` column.
-
-**Step 1 — the table.** Create a migration:
+**Step 1 — create the migration:**
 
 ```bash
 php artisan make:migration create_user_profiles_table
 ```
 
-Edit its `up()` method:
+Edit the new file in `database/migrations/` — its `up()` method:
 
 ```php
 public function up(): void
@@ -800,16 +586,16 @@ public function up(): void
 php artisan migrate
 ```
 
-> `constrained()` adds the foreign key to `users`; `cascadeOnDelete()` deletes the profile
+> `constrained()` adds the foreign key to `users`; `cascadeOnDelete()` removes a profile
 > automatically when its user is deleted.
 
-**Step 2 — the model:**
+**Step 2 — create the model:**
 
 ```bash
 php artisan make:model UserProfile
 ```
 
-`app/Models/UserProfile.php`:
+Edit `app/Models/UserProfile.php`:
 
 ```php
 protected $fillable = ['user_id', 'phone', 'bio'];
@@ -820,7 +606,7 @@ public function user()
 }
 ```
 
-**Step 3 — declare the relationship on User.** In `app/Models/User.php` add:
+**Step 3 — declare the other side of the relationship.** In `app/Models/User.php` add a method:
 
 ```php
 public function profile()
@@ -829,13 +615,73 @@ public function profile()
 }
 ```
 
-**Step 4 — a controller with two endpoints** (view + create/update the profile):
+**Checkpoint ✅**
+- The `user_profiles` table exists in HeidiSQL (empty for now).
+- Both models compile: `php artisan tinker` then `App\Models\User::first()->profile` returns
+  `null` (no profile yet) without error. Type `exit` to leave tinker.
+
+---
+
+## Topic 8 — Seed profiles + add the profile API
+
+**Goal:** give **every** seeded user a profile, then expose endpoints to read and update it.
+
+**Step 1 — a factory for profiles:**
+
+```bash
+php artisan make:factory UserProfileFactory
+```
+
+Edit `database/factories/UserProfileFactory.php` — its `definition()`:
+
+```php
+public function definition(): array
+{
+    return [
+        'phone' => fake()->phoneNumber(),
+        'bio'   => fake()->sentence(),
+        // user_id is set automatically when we attach it to a user below
+    ];
+}
+```
+
+**Step 2 — seed a profile for each user.** Update `database/seeders/DatabaseSeeder.php` so every
+user is created **with** a profile. Add the import and use `->has(...)`:
+
+```php
+use App\Models\User;
+use App\Models\UserProfile;
+
+public function run(): void
+{
+    // Admin, with a profile
+    User::factory()
+        ->has(UserProfile::factory(), 'profile')
+        ->create(['name' => 'Admin', 'email' => 'admin@test.com']);
+
+    // Ten more users, each with a profile
+    User::factory(10)
+        ->has(UserProfile::factory(), 'profile')
+        ->create();
+}
+```
+
+> `->has(UserProfile::factory(), 'profile')` tells Laravel: for each user, also create one linked
+> `UserProfile` through the `profile()` relationship (it fills `user_id` for you).
+
+Re-seed with the clean dataset:
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+**Step 3 — a controller for the profile** (view + create/update):
 
 ```bash
 php artisan make:controller Api/ProfileController
 ```
 
-`app/Http/Controllers/Api/ProfileController.php`:
+Edit `app/Http/Controllers/Api/ProfileController.php`:
 
 ```php
 <?php
@@ -851,78 +697,201 @@ class ProfileController extends Controller
     // GET /api/users/{user}/profile
     public function show(User $user)
     {
-        return $user->profile;   // null if none yet
+        return $user->profile;   // null if none
     }
 
-    // PUT /api/users/{user}/profile  — creates it if missing, updates if it exists
+    // PUT /api/users/{user}/profile — creates it if missing, updates if it exists
     public function update(Request $request, User $user)
     {
-        $data = $request->validate([
-            'phone' => ['nullable', 'string', 'max:30'],
-            'bio'   => ['nullable', 'string', 'max:255'],
-        ]);
-
         // updateOrCreate on the relationship sets user_id automatically
-        $profile = $user->profile()->updateOrCreate([], $data);
+        $profile = $user->profile()->updateOrCreate(
+            [],
+            $request->only(['phone', 'bio'])
+        );
 
         return response()->json($profile, 200);
     }
 }
 ```
 
-**Step 5 — routes.** Add these **inside** the `auth:sanctum` group in `routes/api.php`:
+**Step 4 — add the routes.** In `routes/api.php` add:
 
 ```php
 use App\Http\Controllers\Api\ProfileController;
 
-Route::get('/users/{user}/profile',  [ProfileController::class, 'show']);
-Route::put('/users/{user}/profile',  [ProfileController::class, 'update']);
+Route::get('/users/{user}/profile', [ProfileController::class, 'show']);
+Route::put('/users/{user}/profile', [ProfileController::class, 'update']);
 ```
-
-**Step 6 — (nice touch) include the profile with the user.** In `UserResource` (Topic 7) add a
-line so a user's JSON carries its profile when it's loaded:
-
-```php
-'profile' => $this->whenLoaded('profile'),   // only included when eager-loaded
-```
-
-Then eager-load it in `UserController::show`: `$user->load('profile');`. (Skip this step if
-you're short on time — the two endpoints above are enough.)
 
 **Checkpoint ✅**
-- `PUT /api/users/1/profile` with `{"phone":"012-3456789","bio":"Team lead"}` (Bearer token
-  set) returns **200** with the saved profile, and a row appears in `user_profiles`.
-- `GET /api/users/1/profile` returns that profile; for a user with none it returns `null`.
+- In HeidiSQL, `user_profiles` has **11 rows** (one per user).
+- `GET http://training-app.test/api/users/1/profile` returns that user's profile (phone + bio).
+- `PUT /api/users/1/profile` with `{"phone":"012-3456789","bio":"Team lead"}` returns **200** and
+  the updated profile; the row changes in HeidiSQL.
 
 **Common problems**
-- *`Column not found: user_id`* → the migration didn't run; re-run `php artisan migrate`.
-- *A user gets two profiles* → you used `create()` instead of `updateOrCreate([], $data)`.
+- *`Column not found: user_id`* → the profiles migration didn't run; re-run `php artisan migrate`
+  (or `migrate:fresh --seed`).
+- *A user gets two profiles* → you used `create()` instead of `updateOrCreate([], ...)` in the
+  controller.
+- *Profiles are empty after seeding* → you didn't pass `'profile'` as the relationship name in
+  `->has(...)`, or forgot to re-run `migrate:fresh --seed`.
+
+---
+
+## Topic 9 — Test everything in Postman
+
+**Goal:** exercise the full API in Postman and confirm each endpoint behaves. (First time using
+Postman properly — follow closely.)
+
+**Step 1 — import the ready-made collection.** A Postman **collection** (a saved folder of
+requests) is provided so you don't type each one by hand:
+**`Day1-User-API.postman_collection.json`** (in the course folder). In Postman click **Import**
+(top-left) → drag the file in (or **Choose Files**) → **Import**. A collection named
+**"Day 1 — User API (Laravel)"** appears in the left sidebar with all 8 requests ready to send.
+
+**Step 2 — check the address.** The collection carries a `base_url` variable set to
+`http://training-app.test`. If your app is on a different address, open the collection → the
+**Variables** tab → edit `base_url` → **Save**. (There's no login/token to set — no auth today.)
+
+**Step 3 — send each request, top to bottom**, and confirm the result. Here's what the collection
+contains and what each should return:
+
+| # | Method | URL | Body (raw → JSON) | Expect |
+|---|---|---|---|---|
+| 1 | GET | `{{base_url}}/api/users` | — | **200**, array of 11 users |
+| 2 | POST | `{{base_url}}/api/users` | `{"name":"New Dev","email":"newdev@test.com","password":"password123"}` | **201**, the new user (no password field) |
+| 3 | GET | `{{base_url}}/api/users/1` | — | **200**, one user |
+| 4 | PUT | `{{base_url}}/api/users/1` | `{"name":"Renamed User"}` | **200**, updated user |
+| 5 | GET | `{{base_url}}/api/users/1/profile` | — | **200**, that user's profile |
+| 6 | PUT | `{{base_url}}/api/users/1/profile` | `{"phone":"012-3456789","bio":"Team lead"}` | **200**, updated profile |
+| 7 | DELETE | `{{base_url}}/api/users/12` | — | **204**, empty body |
+| 8 | GET | `{{base_url}}/api/users/99999` | — | **404**, "not found" JSON |
+
+> **Notes:** the imported requests already have their bodies set to **raw → JSON**. Request **2**
+> creates the user that request **7** deletes — after sending **2**, copy the `id` from its
+> response into request **7**'s URL (the sample uses `12`). Prefer to build the requests yourself?
+> Recreate each row from the table (New request → method + `{{base_url}}` URL → Body → raw → JSON).
+
+**Checkpoint ✅**
+- Requests 1–6 return the expected **200/201** with correctly shaped JSON.
+- Delete returns **204**; a missing user returns **404**.
+- Passwords never appear in any response.
+
+---
+
+## Topic 10 — Send a test email with Mailpit (a bridge to Day 2)
+
+**Goal:** get Laravel sending email, safely, into a local test inbox — and send your first
+message. You'll build on this on Day 2 to fire **failure alerts** automatically.
+
+**Concept.** Apps often need to send email (receipts, alerts, password resets). Testing against a
+real mail server is risky — you might spam real people. **Mailpit** is a fake mail server bundled
+with Laragon: your app "sends" mail and Mailpit **catches it** in a local web inbox. No account,
+no external service, nothing leaves your machine.
+
+**Step 1 — start Mailpit.** In Laragon, click **Menu → Tools → Mailpit** and choose **Start**
+(some Laragon Full builds start it automatically with **Start All** — that's fine too). Open the
+inbox in a browser: **`http://localhost:8025`** — you'll see an empty inbox. Mailpit receives mail
+on SMTP (Simple Mail Transfer Protocol) port **1025**.
+
+> **No Mailpit in the menu?** Make sure you installed **Laragon Full**. If your build lacks it,
+> download `mailpit.exe` from `https://github.com/axllent/mailpit/releases`, drop it in
+> `C:\laragon\bin\mailpit\`, and run it — same ports (1025 SMTP, 8025 web).
+
+**Step 2 — point Laravel at Mailpit.** Open `.env` and set the mail lines (no username or
+password — it's all local):
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_HOST=127.0.0.1
+MAIL_PORT=1025
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS="hello@training.test"
+MAIL_FROM_NAME="Training App"
+```
+
+Reload the config so Laravel picks up the change:
+
+```bash
+php artisan config:clear
+```
+
+**Step 3 — add a temporary route that sends an email.** The simplest possible send is
+`Mail::raw()` — a plain-text message, no template needed. Add this to `routes/web.php`:
+
+```php
+use Illuminate\Support\Facades\Mail;
+
+Route::get('/send-test-email', function () {
+    Mail::raw('Hello from your Laravel app on Day 1!', function ($message) {
+        $message->to('someone@example.com')
+                ->subject('Test email from Laravel');
+    });
+
+    return 'Email sent — check Mailpit at http://localhost:8025';
+});
+```
+
+**Step 4 — send it.** Visit **`http://training-app.test/send-test-email`** in a browser. You'll see
+the "Email sent" message.
+
+**Step 5 — view the email in Mailpit.** Open (or refresh) the Mailpit inbox at
+**`http://localhost:8025`**:
+1. The new message appears at the **top of the message list** — from **Training App**
+   (`hello@training.test`), to `someone@example.com`, subject **"Test email from Laravel"**.
+2. **Click the message** to open it. The reading pane shows the headers (From / To / Subject) and
+   the body text ("Hello from your Laravel app on Day 1!").
+3. The tabs above the message let you inspect it different ways — **Text**, **HTML**, **Source**
+   (the raw message), and **Raw**. Useful later for checking exactly what your app sent.
+4. The **🗑 Delete** / **Delete all** button clears the inbox between tests.
+
+**Checkpoint ✅** The email is visible in the **Mailpit inbox** (`http://localhost:8025`) within a
+second or two — from "Training App", subject "Test email from Laravel", with your body text.
+
+**Common problems**
+- *Nothing arrives* → Mailpit isn't running (start it in Laragon), or you forgot
+  `php artisan config:clear` after editing `.env`.
+- *`Connection refused` on port 1025* → Mailpit isn't started; confirm the inbox at
+  `http://localhost:8025` loads first.
+
+> **Tidy up:** the `/send-test-email` route is only a demo — delete it now, or leave it as a
+> reference.
+
+> **Bridge to Day 2:** you've now proven Laravel can send mail. Tomorrow you turn this into an
+> **automatic failure alert** — when a SOAP integration fails, Laravel emails the team, straight
+> into this same Mailpit inbox.
 
 ---
 
 ## End-of-Day 1 — final working state
 
 You should now have:
-- `routes/api.php` — public `register`/`login`, protected `users` resource + `logout`/`me`.
-- `app/Http/Controllers/Api/UserController.php` — CRUD using validated requests + resources.
-- `app/Http/Controllers/Api/AuthController.php` — register/login/logout with tokens.
-- `app/Http/Requests/StoreUserRequest.php`, `UpdateUserRequest.php` — validation rules.
-- `app/Http/Resources/UserResource.php` — JSON shaping (no password).
-- `bootstrap/app.php` — global JSON error handling for 401/404/422/500.
-- `app/Models/User.php` — `HasApiTokens`, `$fillable`, `$hidden`.
-- A Postman environment that stores and reuses the token.
+- A fresh **Laravel 12 project** at `C:\laragon\www\training-app`, connected to the `training`
+  MySQL database.
+- `routes/api.php` — the `users` resource plus the two `profile` routes.
+- `app/Http/Controllers/Api/UserController.php` — Users CRUD.
+- `app/Http/Controllers/Api/ProfileController.php` — read/update a user's profile.
+- `app/Models/UserProfile.php` + the `user_profiles` table — a one-to-one relationship with users.
+- `database/seeders/DatabaseSeeder.php` + `UserProfileFactory` — **11 users, each with a profile**.
+- A Postman collection ("User API") that exercises every endpoint.
+- **Mailpit** running, `.env` mail settings pointing at it, and a proven test-email send — ready
+  for Day 2's automatic alerts.
 
-**Security recap (what protects this API)**
-- Passwords **hashed** with `Hash::make`; never stored or returned in plain text.
-- `$fillable` + `$request->validated()` block mass-assignment attacks.
-- `$hidden` + API Resource guarantee passwords never appear in responses.
-- **Token auth** on every management route; generic login error avoids user enumeration.
-- Errors return **safe JSON**; real messages hidden when `APP_DEBUG=false`.
+**What ships "for free" from the framework (worth knowing)**
+- Passwords are **hashed automatically** (the User model's `hashed` cast) and **never returned**
+  (`$hidden`).
+- `$fillable` limits mass assignment to `name`, `email`, `password`.
+- Route model binding gives a clean **404** for a missing user on JSON requests.
 
 **Stretch goals (if time remains)**
-- Rate limiting: `Route::middleware(['auth:sanctum','throttle:60,1'])`.
-- Paginate `index()` with `User::paginate(15)`.
-- Add a `role` column and block non-admins from deleting users.
+- Add input validation to `store`/`update` (Form Request classes) so bad input returns a clean
+  **422** instead of a database error.
+- Add token authentication with the **Sanctum** that `install:api` already installed.
+- Return the profile inline with a user (eager-load `->load('profile')` and include it in the
+  response).
 
-**Tomorrow (Day 2):** consume and expose SOAP services, and email an alert automatically when
-an integration fails.
+**Tomorrow (Day 2):** consume and expose SOAP services against this same app, and email an alert
+automatically when an integration fails.

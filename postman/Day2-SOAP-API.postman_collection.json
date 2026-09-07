@@ -1,0 +1,203 @@
+{
+  "info": {
+    "_postman_id": "d2a90000-0000-4000-8000-000000000002",
+    "name": "Day 2 - SOAP (Laravel)",
+    "description": "SOAP requests for Day 2: (A) call the external number-conversion service by hand, (B) drive your own app's SOAP consume + exposed endpoint.\n\nBody is raw XML for SOAP calls. Keep the SOAPAction header exactly as given (quotes included). Requires PHP ext-soap enabled and internet for the external calls. Edit `base_url` if needed.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "A. By hand - external service",
+      "item": [
+        {
+          "name": "1. Get the WSDL (contract)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://www.dataaccess.com/webservicesserver/NumberConversion.wso?WSDL",
+            "description": "Returns the WSDL for the public NumberConversion service. Skim it for the NumberToWords operation, its ubiNum input and NumberToWordsResult output."
+          },
+          "response": []
+        },
+        {
+          "name": "2. NumberToWords(1234)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/xml; charset=utf-8"
+              },
+              {
+                "key": "SOAPAction",
+                "value": "\"\""
+              }
+            ],
+            "url": "https://www.dataaccess.com/webservicesserver/NumberConversion.wso",
+            "description": "Raw SOAP call to the external service. SOAPAction is empty (two quotes). Response contains <NumberToWordsResult>one thousand two hundred and thirty four</NumberToWordsResult>.",
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"\n               xmlns:web=\"http://www.dataaccess.com/webservicesserver/\">\n  <soap:Body>\n    <web:NumberToWords>\n      <web:ubiNum>1234</web:ubiNum>\n    </web:NumberToWords>\n  </soap:Body>\n</soap:Envelope>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Poke the real SOAP service directly, before any code (Day 2 Topic 3, Phase 1)."
+    },
+    {
+      "name": "B. Your app",
+      "item": [
+        {
+          "name": "3. Consume via our API",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/conversions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversions"
+              ]
+            },
+            "description": "Our endpoint calls the external SOAP service and stores the result. Expect 201 with words + a new conversions row. A broken upstream -> 503 + an alert email in Mailpit.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"number\": 1234\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Get our WSDL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/soap?wsdl",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "soap"
+              ],
+              "query": [
+                {
+                  "key": "wsdl",
+                  "value": null
+                }
+              ]
+            },
+            "description": "The WSDL our app publishes for getUserByEmail."
+          },
+          "response": []
+        },
+        {
+          "name": "5. getUserByEmail (valid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/xml; charset=utf-8"
+              },
+              {
+                "key": "SOAPAction",
+                "value": "\"urn:UserInfo#getUserByEmail\""
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/soap",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "soap"
+              ]
+            },
+            "description": "Call our exposed SOAP service. Expect XML with name, email, createdAt for admin@test.com.",
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n                  xmlns:urn=\"urn:UserInfo\">\n  <soapenv:Body>\n    <urn:getUserByEmail><email>admin@test.com</email></urn:getUserByEmail>\n  </soapenv:Body>\n</soapenv:Envelope>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. getUserByEmail (unknown -> Fault)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/xml; charset=utf-8"
+              },
+              {
+                "key": "SOAPAction",
+                "value": "\"urn:UserInfo#getUserByEmail\""
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/soap",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "soap"
+              ]
+            },
+            "description": "Unknown email. Expect a <soap:Fault> with 'No user found for ...'.",
+            "body": {
+              "mode": "raw",
+              "raw": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n                  xmlns:urn=\"urn:UserInfo\">\n  <soapenv:Body>\n    <urn:getUserByEmail><email>nobody@nowhere.test</email></urn:getUserByEmail>\n  </soapenv:Body>\n</soapenv:Envelope>",
+              "options": {
+                "raw": {
+                  "language": "xml"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Consume through your Laravel API, and call the SOAP endpoint your app exposes."
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://training-app.test",
+      "type": "string"
+    }
+  ]
+}

@@ -19,7 +19,7 @@ Interface · **VM** = Virtual Machine · **CSV** = Comma-Separated Values · **S
 Linux job scheduler.
 
 **The three days**
-- **[Day 1 — Laravel REST API: Validation, Error Handling & Security](day1.md)**
+- **[Day 1 — Build a Laravel 12 REST API (Users & Profiles)](day1.md)**
 - **[Day 2 — SOAP Integration & Failure Notifications](day2.md)**
 - **[Day 3 — SFTP, Cron & Scheduled File Transfers](day3.md)**
 
@@ -27,29 +27,31 @@ Linux job scheduler.
 out to do), the **steps**, and an **Outcome** you can verify (the topic's checkpoint). Topics are
 ordered *prerequisites first, easy first* — each one builds on the last.
 
-**Course-level learning outcomes.** By the end, participants can: build validated REST endpoints
-with consistent error handling; secure APIs with token auth (Sanctum); test APIs in Postman;
-consume and expose SOAP services and handle faults; send automatic failure-alert emails; use SFTP
-by terminal and GUI; and automate a routine task with cron.
+**Course-level learning outcomes.** By the end, participants can: build a REST API in Laravel with
+CRUD endpoints, related tables and seeded data; test APIs in Postman; consume and expose SOAP
+services and handle faults; send automatic failure-alert emails; use SFTP by terminal and GUI; and
+automate a routine task with cron.
 
 ---
 
-## Day 1 — [Laravel REST API: Validation, Error Handling & Security](day1.md)
+## Day 1 — [Build a Laravel 12 REST API (Users & Profiles)](day1.md)
 
-*Build a secured User-Management REST API, layering complexity easy-first: a plain CRUD API that
-works, then validation, clean errors, token auth, and a related table.*
+*Start from a blank Laravel 12 project and build up: a Users CRUD API, seeded data, a related
+`user_profiles` table (one-to-one), a full Postman test pass, and a first test email via Mailpit.
+No validation/auth today — the focus is building, seeding and testing.*
 
 | # | Topic | Objective | Outcome |
 |---|---|---|---|
 | 1 | [Install & verify your tools](day1.md#topic-1--install-and-verify-your-tools) | Install Laragon (PHP 8.3, Composer, MySQL), Postman and VS Code from zero, and verify them | A working local stack: PHP/Composer/MySQL running, Postman and VS Code open |
-| 2 | [Get the Laravel app running](day1.md#topic-2--get-the-laravel-application-running) | Set up the provided app (`composer install`) and connect it to MySQL | The `/users` page loads at `127.0.0.1:8000`; the `training` DB has a seeded `users` table |
+| 2 | [Create a new Laravel 12 project](day1.md#topic-2--create-a-new-laravel-12-project) | Create a blank project with `composer create-project` and connect it to MySQL | The Laravel welcome page loads at `http://training-app.test` (served by Laragon); the `training` DB has a `users` table |
 | 3 | [REST fundamentals (concept)](day1.md#topic-3--rest-fundamentals-concept) | Learn the REST vocabulary: resources, HTTP verbs, status codes, JSON | Can pick the right verb + status for an action (e.g. create → POST → 201) |
-| 4 | [Tour the app: where the API fits](day1.md#topic-4--tour-the-app-where-the-api-layer-fits) | See the models, migrations and routes you'll build on | Can point to the User model, its migration, and where API routes live |
-| 5 | [API routes, controller & route model binding](day1.md#topic-5--api-routes-resource-controller--route-model-binding) | Build the five CRUD endpoints returning JSON (the easy win — no rules yet) | `GET /api/users` returns JSON; full CRUD works (still unvalidated/unsecured) |
-| 6 | [Validation with Form Requests](day1.md#topic-6--validation-with-form-requests) | Reject bad input with Form Request classes and custom messages | Invalid body → **422** with a JSON `errors` list; valid body → **201** |
-| 7 | [API Resources & error handling](day1.md#topic-7--api-resources--consistent-error-handling) | Shape the JSON output and make every error return clean JSON | Stable JSON (no password leak); 401/404/422/500 all return JSON, never HTML |
-| 8 | [Sanctum auth + Postman (finale)](day1.md#topic-8--sanctum-token-authentication--postman-hands-on-finale) | Secure the API with token auth and prove the full flow in Postman | No token → **401**; with token → full CRUD; token auto-saved in Postman |
-| 9 | [A second table: user profiles (relationships)](day1.md#topic-9--a-second-table-user-profiles-relationships) | Add a related table and learn one-to-one Eloquent relationships | `GET`/`PUT /api/users/{id}/profile` work; `hasOne`/`belongsTo` understood |
+| 4 | [Tour a fresh Laravel project](day1.md#topic-4--tour-a-fresh-laravel-project) | See what a new Laravel ships: User model, migration, factory, seeder | Can point to the User model, its migration/factory, and where API routes live |
+| 5 | [Build the Users CRUD API](day1.md#topic-5--build-the-users-crud-api) | Scaffold and fill the five CRUD endpoints returning JSON (route model binding) | `POST`/`GET /api/users` work; passwords never appear in responses |
+| 6 | [Seed the users table](day1.md#topic-6--seed-the-users-table) | Use the factory + seeder to create ~10 users plus a known admin | `users` has 11 rows incl. `admin@test.com`; `GET /api/users` lists them |
+| 7 | [A related table: user_profiles](day1.md#topic-7--a-related-table-user_profiles-one-to-one) | Add a `user_profiles` migration + model and a one-to-one relationship | `user_profiles` table exists; `hasOne`/`belongsTo` wired between the models |
+| 8 | [Seed profiles + profile API](day1.md#topic-8--seed-profiles--add-the-profile-api) | Seed a profile for every user and expose read/update endpoints | `user_profiles` has 11 rows; `GET`/`PUT /api/users/{id}/profile` work |
+| 9 | [Test everything in Postman](day1.md#topic-9--test-everything-in-postman) | Build a Postman collection and exercise every endpoint | All CRUD + profile requests return the expected JSON/status |
+| 10 | [Send a test email with Mailpit](day1.md#topic-10--send-a-test-email-with-mailpit-a-bridge-to-day-2) | Set up Mailpit, point Laravel at it, and send a simple email | A test email lands in the Mailpit inbox (`http://localhost:8025`) |
 
 ---
 

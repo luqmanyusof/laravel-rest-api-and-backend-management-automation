@@ -157,8 +157,8 @@
           "title": "What This Course Is",
           "summary": "A practical 3-day training on connecting systems using Laravel and Linux.",
           "points": [
-            "You start from a provided Laravel application and add the integration layers yourself",
-            "Day 1 — REST API: validation, consistent error handling, and security",
+            "You build a Laravel application from scratch and add the integration layers yourself",
+            "Day 1 — REST API: build CRUD endpoints, seed data, and test in Postman",
             "Day 2 — SOAP: consuming and exposing services, plus automatic email alerts on failure",
             "Day 3 — Files and automation: SFTP transfer and cron scheduling on a Linux server",
             "Every topic follows the same shape: objective, steps, then a checkpoint you can verify"
@@ -177,13 +177,12 @@
           "title": "Objectives & Learning Outcomes",
           "summary": "By the end of the three days, participants can:",
           "points": [
-            "Build REST API endpoints with validation and consistent error handling",
-            "Secure APIs with token authentication (Laravel Sanctum)",
+            "Build a REST API in Laravel with CRUD endpoints, related tables and seeded data",
             "Test APIs using Postman",
             "Consume and expose SOAP services, and handle SOAP faults safely",
             "Send email alerts automatically when an integration fails",
             "Use SFTP by terminal and by GUI client",
-            "Automate tasks with cron, and see how the three integration styles connect into one workflow"
+            "Automate a routine task with cron, and connect the three integration styles into one workflow"
           ],
           "notes": "These come straight from the course brief. Read them as the promises of the course."
         },
@@ -240,9 +239,9 @@
           "n": 7,
           "type": "section",
           "section": "Day 1 - Laravel REST API",
-          "title": "Day 1 — Laravel REST API",
-          "subtitle": "Validation, error handling and security, built one layer at a time",
-          "notes": "Set up the day's shape: install the tools, get the app running, learn REST, build CRUD API and harden it step by step."
+          "title": "Day 1 — Build a Laravel 12 REST API",
+          "subtitle": "From a blank project to a tested Users & Profiles API",
+          "notes": "Set up the day's shape: install the tools, create a fresh project, learn REST, build the CRUD API, seed data, add a related profiles table, then test in Postman and send a first email."
         },
         {
           "n": 8,
@@ -269,20 +268,20 @@
           "type": "content",
           "section": "Day 1 - Laravel REST API",
           "title": "Composer: the PHP Package Manager",
-          "summary": "Why we download the app's dependencies instead of shipping them.",
+          "summary": "How we create the project and pull in its dependencies.",
           "points": [
             "Modern applications are built on libraries written by other people",
+            "`composer create-project` scaffolds a brand-new Laravel 12 app for you",
             "Composer reads the project's dependency list and downloads exactly those versions",
             "Downloaded libraries land in a vendor folder that is never edited by hand",
-            "That folder is not shared with the project — each machine fetches its own copy",
-            "This is why the very first step on a provided project is installing dependencies"
+            "Each machine fetches its own copy — the vendor folder isn't shared or committed"
           ],
           "diagram": {
             "type": "flow",
-            "caption": "How a provided project becomes a running one",
-            "mermaid": "flowchart LR\n  A[\"Project files<br/>(no libraries)\"] --> B[\"Composer reads<br/>dependency list\"] --> C[\"Downloads matching<br/>library versions\"] --> D[\"vendor folder<br/>ready\"] --> E[\"App can run\"]"
+            "caption": "How create-project becomes a running app",
+            "mermaid": "flowchart LR\n  A[\"composer<br/>create-project\"] --> B[\"Scaffolds<br/>Laravel 12\"] --> C[\"Downloads<br/>dependencies\"] --> D[\"vendor folder<br/>ready\"] --> E[\"App can run\"]"
           },
-          "notes": "Explain the idea of a dependency and why pinned versions matter."
+          "notes": "Explain the idea of a dependency, and that create-project both scaffolds the app and installs its libraries."
         },
         {
           "n": 10,
@@ -314,7 +313,7 @@
             "A browser can only send simple read requests — an API needs more than that",
             "Postman sends any request type with custom headers/body and displays raw responses",
             "Requests are saved into collections so tests can be repeated exactly and shared",
-            "Environments hold values like base address and login token in one place",
+            "Environments hold values like the base address in one place, reused across requests",
             "VS Code is the editor: opens whole project folder and understands PHP"
           ],
           "diagram": {
@@ -360,76 +359,76 @@
           "points": [
             "Routes connect a URL and verb to the code that handles it",
             "A resource controller groups create, read, update and delete actions together",
-            "Framework fetches record straight from ID in URL — or returns 404 automatically",
-            "The model is the application's view of a database table",
-            "An API Resource shapes output into a stable, predictable JSON form"
+            "Route model binding fetches the record straight from the ID in the URL — or returns 404",
+            "The model is the application's view of a database table (Eloquent)",
+            "Laravel converts the returned model to JSON automatically"
           ],
           "diagram": {
             "type": "flow",
-            "caption": "One request, five stops",
-            "mermaid": "flowchart LR\n  R[\"Request\"] --> RT[\"Route<br/>where to go?\"] --> C[\"Controller<br/>what happens?\"] --> M[\"Model<br/>talks to DB\"] --> AR[\"API Resource<br/>shapes JSON\"] --> RS[\"Response\"]"
+            "caption": "One request, four stops",
+            "mermaid": "flowchart LR\n  R[\"Request\"] --> RT[\"Route<br/>where to go?\"] --> C[\"Controller<br/>what happens?\"] --> M[\"Model<br/>talks to DB\"] --> RS[\"JSON Response\"]"
           },
-          "notes": "Explain separation of concerns: routes decide where, controllers decide what, models talk to DB, resources format output."
+          "notes": "Explain separation of concerns: routes decide where, controllers decide what, models talk to the DB, and Laravel serialises the model to JSON."
         },
         {
           "n": 14,
           "type": "content",
           "section": "Day 1 - Laravel REST API",
-          "title": "Trustworthy Input & Consistent Errors",
-          "summary": "Reject bad data early; return clean, predictable failures.",
+          "title": "Seeding Data: Factories & Seeders",
+          "summary": "Fill the database with realistic sample data, repeatably.",
           "points": [
-            "Validation checks incoming data before any logic runs",
-            "Rules live in dedicated classes, keeping controllers clean and readable",
-            "A failed check returns a clear 422 status listing exactly which fields failed",
-            "Central error handling guarantees failures come back as JSON, never HTML pages",
-            "Internal details and stack traces stay in logs — callers see safe messages"
+            "A factory describes how to build one fake record (a user, a profile)",
+            "A seeder decides how many to create and with what values",
+            "`migrate:fresh --seed` wipes, rebuilds and re-fills the database in one command",
+            "`->has(...)` attaches a related record — here, one profile per user",
+            "You end with a known dataset: ~10 users, each with a linked profile"
           ],
           "diagram": {
             "type": "flow",
-            "caption": "The validation gate",
-            "mermaid": "flowchart TB\n  A[\"Incoming request\"] --> B{\"Passes validation?\"}\n  B -- No --> C[\"422 + field error list\"]\n  B -- Yes --> D[\"Controller logic runs\"]\n  D --> E{\"Error occurred?\"}\n  E -- No --> F[\"200 / 201 + JSON data\"]\n  E -- Yes --> G[\"Handled JSON error<br/>401 · 403 · 404 · 500\"]"
+            "caption": "From empty tables to a known dataset",
+            "mermaid": "flowchart LR\n  A[\"UserFactory<br/>builds one user\"] --> B[\"Seeder<br/>make 10 + admin\"] --> C[\"->has(profile)<br/>one profile each\"] --> D[\"migrate:fresh --seed\"] --> E[\"11 users<br/>+ 11 profiles\"]"
           },
-          "notes": "Explain 'fail early, fail clearly'. Differentiate between 4xx client errors and 5xx server errors."
+          "notes": "Explain why seeded data matters: a known, repeatable dataset makes the API easy to demo and test. Show how a factory + seeder + ->has() build users and profiles together."
         },
         {
           "n": 15,
           "type": "content",
           "section": "Day 1 - Laravel REST API",
-          "title": "Securing the API with Token Authentication",
-          "summary": "Who is allowed to do what — and how data is protected.",
+          "title": "Related Data: One-to-One Profiles",
+          "summary": "Real data is connected, so the API must be too.",
           "points": [
-            "Sanctum is Laravel's token authentication package: log in once, receive token",
-            "Token travels on every request header; without a valid token, route returns 401",
-            "Middleware acts as a guard, running before code to reject unauthenticated calls",
-            "Passwords are hashed using one-way cryptographic algorithms",
-            "Only approved fields can be written, and sensitive attributes are masked"
+            "Splitting tables keeps the core record lean and optional detail structured",
+            "One user has one profile — a one-to-one relationship joined by a foreign key",
+            "Eloquent expresses the link in the models (hasOne / belongsTo), no manual SQL joins",
+            "A migration adds the user_profiles table with a user_id foreign key",
+            "The profile endpoints read and update a user's linked profile"
           ],
           "diagram": {
-            "type": "sequence",
-            "caption": "The token lifecycle",
-            "mermaid": "sequenceDiagram\n  participant C as Client (Postman)\n  participant A as API\n  C->>A: Login with email + password\n  A-->>C: Bearer Token\n  C->>A: Request + Token Header\n  A-->>C: 200 OK + Data\n  C->>A: Request without Token\n  A-->>C: 401 Unauthenticated"
+            "type": "er",
+            "caption": "users ↔ user_profiles",
+            "mermaid": "erDiagram\n  USERS ||--|| USER_PROFILES : has\n  USERS {\n    id integer\n    string name\n    string email\n  }\n  USER_PROFILES {\n    id integer\n    id user_id\n    string phone\n    string bio\n  }"
           },
-          "notes": "Explain stateless tokens versus old-style server sessions."
+          "notes": "Explain modeling relationships to keep a single source of truth, and how hasOne/belongsTo wire the two models together."
         },
         {
           "n": 16,
           "type": "content",
           "section": "Day 1 - Laravel REST API",
-          "title": "Related Data: One-to-One Relationships",
-          "summary": "Real data is connected, so the API must be too.",
+          "title": "Sending Email with Mailpit",
+          "summary": "Prove the app can send mail — safely, into a local inbox.",
           "points": [
-            "Splitting tables keeps core records lean and optional details structured",
-            "One user has one profile — a one-to-one relationship joined by foreign key",
-            "Framework expresses links in models, eliminating manual SQL joins",
-            "Related data can be eager-loaded on demand and included in JSON responses",
-            "Scales logically to one-to-many and many-to-many relationships"
+            "Apps often send email: receipts, alerts, password resets",
+            "Testing against a real mail server is risky — you might spam real people",
+            "Mailpit is a fake local mail server bundled with Laragon that catches every message",
+            "Point Laravel's mail settings at Mailpit (SMTP on 127.0.0.1:1025), then send",
+            "This is the base for Day 2's automatic failure alerts"
           ],
           "diagram": {
-            "type": "er",
-            "caption": "users ↔ user_profiles",
-            "mermaid": "erDiagram\n  USERS ||--|| USER_PROFILES : has\n  USERS {\n    id integer\n    string name\n    string email\n  }\n  USER_PROFILES {\n    id integer\n    id user_id\n    string phone\n    string address\n  }"
+            "type": "flow",
+            "caption": "Test mail never leaves your machine",
+            "mermaid": "flowchart LR\n  A[\"Laravel<br/>Mail::raw(...)\"] --> B[\"Mailpit<br/>(local SMTP, 1025)\"] --> C[\"Web inbox<br/>localhost:8025\"]\n  B -. \"never forwarded\" .-> D[\"Real recipients\"]"
           },
-          "notes": "Explain modeling relationships to maintain single source of truth."
+          "notes": "Explain why a mail trap is essential during development, and that this simple send becomes an automatic failure alert on Day 2."
         },
         {
           "n": 17,
@@ -438,18 +437,18 @@
           "title": "Proving It Works in Postman",
           "summary": "Testing is how you show the API keeps its promises.",
           "points": [
-            "Group requests into collections so the full suite runs sequentially",
-            "Store base URLs and authentication tokens in Postman environment variables",
-            "Automatically capture and set tokens on login for subsequent requests",
-            "Test failure paths thoroughly: missing token -> 401, invalid payload -> 422",
-            "A passing test suite is verifiable proof your API contract holds"
+            "Group requests into a collection so the full suite runs in order",
+            "Store the base URL in a Postman environment variable, reused by every request",
+            "Exercise every endpoint: list, create, read, update, delete, and the profile routes",
+            "Check the status and shape: create -> 201, read -> 200, delete -> 204, missing -> 404",
+            "A passing run is verifiable proof your API contract holds"
           ],
           "diagram": {
             "type": "flow",
             "caption": "A full Postman run against the API",
-            "mermaid": "flowchart LR\n  A[\"Login<br/>→ Token Saved\"] --> B[\"Create User<br/>201\"] --> C[\"List/Read<br/>200\"] --> D[\"Update<br/>200\"] --> E[\"Delete<br/>204\"]\n  A -.-> F[\"No Token<br/>401\"]\n  B -.-> G[\"Bad Data<br/>422\"]"
+            "mermaid": "flowchart LR\n  A[\"Create User<br/>201\"] --> B[\"List / Read<br/>200\"] --> C[\"Update<br/>200\"] --> D[\"Get Profile<br/>200\"] --> E[\"Delete<br/>204\"]\n  B -.-> F[\"Missing user<br/>404\"]"
           },
-          "notes": "Highlight that testing failure paths is as crucial as testing happy paths."
+          "notes": "Highlight testing both happy paths and the 404 path. No auth today — the collection just needs the base_url."
         },
         {
           "n": 18,
@@ -468,7 +467,7 @@
           "points": [
             "PHP extension adds native protocol capabilities directly to the language runtime",
             "SOAP extension is built-in; simply enabled in php.ini without external dependencies",
-            "Mailpit acts as a local SMTP server catching all outgoing test emails safely",
+            "Mailpit (first used on Day 1) is a local SMTP server catching all outgoing test emails safely",
             "View caught emails in a browser inbox — zero risk of spamming real users",
             "Background task: Start VirtualBox + Ubuntu downloads (~3 GB) early for Day 3"
           ],
@@ -885,7 +884,7 @@
           "title": "Putting It All Together",
           "summary": "End-to-end integration architecture combining REST, SOAP, SFTP & Cron.",
           "points": [
-            "REST APIs accept real-time transactional data protected by Sanctum tokens",
+            "REST APIs accept real-time transactional data as JSON over HTTP",
             "SOAP services exchange rigid enterprise messages with external systems",
             "SFTP channels transfer bulk data files securely into scheduled server drop zones",
             "Cron triggers Laravel artisan commands to ingest files automatically",
@@ -894,7 +893,7 @@
           "diagram": {
             "type": "architecture",
             "caption": "Complete backend integration ecosystem",
-            "mermaid": "flowchart TB\n  subgraph EXT[\"External Ecosystem\"]\n    API_C[\"Mobile / Web Clients\"]\n    SOAP_P[\"Enterprise Partners\"]\n    FILE_P[\"Legacy File Servers\"]\n  end\n  subgraph SRV[\"Ubuntu Linux Server\"]\n    INB[\"/var/sftp/dropzone/\"]\n    CRON[\"Cron Scheduled Job\"]\n    subgraph APP[\"Laravel Backend Application\"]\n      REST_E[\"REST API Controllers\"]\n      SOAP_E[\"SOAP Services\"]\n      INGEST[\"File Ingestion Process\"]\n      MAIL[\"Mail Notification Service\"]\n    end\n    DB[(\"MySQL Database\")]\n  end\n  API_C -- \"REST JSON + Bearer Token\" --> REST_E\n  SOAP_P -- \"SOAP XML Envelopes\" --> SOAP_E\n  FILE_P -- \"SFTP Upload\" --> INB\n  INB --> CRON --> INGEST\n  REST_E --> DB\n  SOAP_E --> DB\n  INGEST --> DB\n  APP -- \"On Error Failure\" --> MAIL --> MAILPIT[\"Mailpit / SMTP Inbox\"]"
+            "mermaid": "flowchart TB\n  subgraph EXT[\"External Ecosystem\"]\n    API_C[\"Mobile / Web Clients\"]\n    SOAP_P[\"Enterprise Partners\"]\n    FILE_P[\"Legacy File Servers\"]\n  end\n  subgraph SRV[\"Ubuntu Linux Server\"]\n    INB[\"/var/sftp/dropzone/\"]\n    CRON[\"Cron Scheduled Job\"]\n    subgraph APP[\"Laravel Backend Application\"]\n      REST_E[\"REST API Controllers\"]\n      SOAP_E[\"SOAP Services\"]\n      INGEST[\"File Ingestion Process\"]\n      MAIL[\"Mail Notification Service\"]\n    end\n    DB[(\"MySQL Database\")]\n  end\n  API_C -- \"REST JSON\" --> REST_E\n  SOAP_P -- \"SOAP XML Envelopes\" --> SOAP_E\n  FILE_P -- \"SFTP Upload\" --> INB\n  INB --> CRON --> INGEST\n  REST_E --> DB\n  SOAP_E --> DB\n  INGEST --> DB\n  APP -- \"On Error Failure\" --> MAIL --> MAILPIT[\"Mailpit / SMTP Inbox\"]"
           },
           "notes": "Walk through the entire end-to-end pipeline diagram showing how all 3 days connect."
         },
@@ -920,10 +919,10 @@
           "title": "Summary & Next Steps",
           "summary": "Key milestones accomplished and future growth pathways.",
           "points": [
-            "Built: Secured REST API with token auth, validation, and standardized error responses",
+            "Built: a REST API with CRUD endpoints, a related profiles table and seeded data, tested in Postman",
             "Built: SOAP Client and Server integrations with fault trapping and Mailpit alerts",
             "Built: Linux SFTP server, secure user drop zone, and automated Cron execution pipeline",
-            "Next Steps: Queued background jobs (Redis/RabbitMQ), Server Hardening, CI/CD pipelines",
+            "Next Steps: add validation & token auth (Sanctum), queued jobs, server hardening, CI/CD",
             "Open floor for Questions & Wrap-up Discussion"
           ],
           "notes": "Revisit learning outcomes from Slide 4 and open the floor for final Q&A."
