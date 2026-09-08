@@ -158,7 +158,7 @@
           "summary": "A practical 3-day training on connecting systems using Laravel and Linux.",
           "points": [
             "You build a Laravel application from scratch and add the integration layers yourself",
-            "Day 1 — REST API: build CRUD endpoints, seed data, and test in Postman",
+            "Day 1 — REST API: build CRUD endpoints, seed data, consume an external API, and test in Postman",
             "Day 2 — SOAP: consuming and exposing services, plus automatic email alerts on failure",
             "Day 3 — Files and automation: SFTP transfer and cron scheduling on a Linux server",
             "Every topic follows the same shape: objective, steps, then a checkpoint you can verify"
@@ -241,7 +241,7 @@
           "section": "Day 1 - Laravel REST API",
           "title": "Day 1 — Build a Laravel 12 REST API",
           "subtitle": "From a blank project to a tested Users & Profiles API",
-          "notes": "Set up the day's shape: install the tools, create a fresh project, learn REST, build the CRUD API, seed data, add a related profiles table, then test in Postman and send a first email."
+          "notes": "Set up the day's shape: install the tools, create a fresh project, learn REST, build the CRUD API, seed data, consume an external REST API, add a related profiles table, then test in Postman and send a first email."
         },
         {
           "n": 8,
@@ -452,14 +452,34 @@
         },
         {
           "n": 18,
-          "type": "section",
-          "section": "Day 2 - SOAP Integration",
-          "title": "Day 2 — SOAP Integration & Failure Alerts",
-          "subtitle": "Consume a service, survive its failures, expose your own, and get told when it breaks",
-          "notes": "Frame the day as integrating with external systems you do not control."
+          "type": "content",
+          "section": "Day 1 - Laravel REST API",
+          "title": "Consuming a REST API: GET & POST",
+          "summary": "You built an API — now call someone else's: read with GET, send with POST.",
+          "points": [
+            "REST needs no envelope and no WSDL — just a URL, with JSON coming back",
+            "Laravel's HTTP client does both: Http::get to read, Http::post to send",
+            "Build it up gradually: the barest call first, then inputs, then validation + error handling",
+            "GET example: live currency rates (Frankfurter). POST example: send a record to another API",
+            "Validate input and handle a dead upstream cleanly — a habit you reuse for SOAP on Day 2"
+          ],
+          "diagram": {
+            "type": "flow",
+            "caption": "Read with GET, send with POST",
+            "mermaid": "flowchart LR\n  L[\"Laravel<br/>HTTP client\"] -- \"Http::get\" --> R[\"Read a rate<br/>(Frankfurter)\"]\n  L -- \"Http::post\" --> W[\"Send a record<br/>(JSONPlaceholder)\"]"
+          },
+          "notes": "This closes Day 1: you built and tested your own API, and now you consume an external one. Stress the progressive build in the labs — a one-line Http::get first, then query inputs, then validation and try/catch, then a POST that sends data. It is a gentle lead-in to Day 2, where the same job (call a remote service, map the answer) is done over SOAP with far more ceremony — an envelope, a WSDL, a SOAPAction header."
         },
         {
           "n": 19,
+          "type": "section",
+          "section": "Day 2 - SOAP Integration",
+          "title": "Day 2 — SOAP Integration, with Failure Alerts",
+          "subtitle": "Consume and expose SOAP services — and get told when things break",
+          "notes": "Frame the day as integrating with external systems you do not control, over SOAP — the heavier, contract-based protocol. Order: understand SOAP, consume one, expose your own, then wire up automatic email alerts. REST was covered on Day 1, so today is the SOAP contrast."
+        },
+        {
+          "n": 20,
           "type": "content",
           "section": "Day 2 - SOAP Integration",
           "title": "Today's Tools: SOAP Extension & Mailpit",
@@ -479,7 +499,7 @@
           "notes": "Explain why mail traps are essential during development and remind everyone to start Day 3 downloads."
         },
         {
-          "n": 20,
+          "n": 21,
           "type": "content",
           "section": "Day 2 - SOAP Integration",
           "title": "SOAP vs REST",
@@ -507,7 +527,7 @@
           "notes": "Emphasize that SOAP remains widespread in high-security enterprise environments."
         },
         {
-          "n": 21,
+          "n": 22,
           "type": "content",
           "section": "Day 2 - SOAP Integration",
           "title": "Anatomy of a SOAP Message",
@@ -527,7 +547,7 @@
           "notes": "Compare the Envelope to a physical mailing envelope with header metadata and body contents."
         },
         {
-          "n": 22,
+          "n": 23,
           "type": "content",
           "section": "Day 2 - SOAP Integration",
           "title": "The WSDL: Machine-Readable Contract",
@@ -547,7 +567,7 @@
           "notes": "Point out that reading WSDLs is an indispensable skill for backend integrators."
         },
         {
-          "n": 23,
+          "n": 24,
           "type": "content",
           "section": "Day 2 - SOAP Integration",
           "title": "Consuming an External SOAP Service",
@@ -565,26 +585,6 @@
             "mermaid": "sequenceDiagram\n  participant P as Postman (Manual)\n  participant S as Remote SOAP Service\n  participant L as Laravel App\n  participant DB as Database\n  P->>S: POST Raw XML Envelope\n  S-->>P: 200 OK with XML Response\n  Note over P,S: Response verified manually\n  L->>S: SoapClient method call\n  S-->>L: XML Object\n  L->>DB: Persist mapped data"
           },
           "notes": "Emphasize why testing manually in Postman first saves debugging time later in PHP code."
-        },
-        {
-          "n": 24,
-          "type": "content",
-          "section": "Day 2 - SOAP Integration",
-          "title": "When Integrations Fail",
-          "summary": "External dependencies fail — plan resilient fallback mechanisms.",
-          "points": [
-            "Three main failure scenarios: SOAP Faults, connection timeouts, and network blips",
-            "Set explicit HTTP timeouts to prevent API workers hanging indefinitely",
-            "Implement automated retries with exponential backoff for transient glitches",
-            "Catch SoapFault exceptions cleanly to prevent application crash pages",
-            "Log diagnostic detail internally while returning graceful feedback to callers"
-          ],
-          "diagram": {
-            "type": "decision",
-            "caption": "Resilient invocation flowchart",
-            "mermaid": "flowchart TB\n  A[\"Execute SOAP Call\"] --> B{\"Success?\"}\n  B -- Yes --> C[\"Process & Save Payload\"]\n  B -- Network Blip --> D{\"Retries remaining?\"}\n  D -- Yes --> A\n  D -- No --> E[\"Trigger Exception Handler\"]\n  B -- SOAP Fault --> E\n  E --> F[\"Log error · Notify team · Return clean error\"]"
-          },
-          "notes": "Discuss resilience patterns: timeouts, retries, and circuit breakers."
         },
         {
           "n": 25,

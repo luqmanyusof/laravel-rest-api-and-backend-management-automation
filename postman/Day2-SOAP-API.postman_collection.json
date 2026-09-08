@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d2a90000-0000-4000-8000-000000000002",
     "name": "Day 2 - SOAP (Laravel)",
-    "description": "SOAP requests for Day 2: (A) call the external number-conversion service by hand, (B) drive your own app's SOAP consume + exposed endpoint.\n\nBody is raw XML for SOAP calls. Keep the SOAPAction header exactly as given (quotes included). Requires PHP ext-soap enabled and internet for the external calls. Edit `base_url` if needed.",
+    "description": "Day 2 SOAP requests: (A) call the external SOAP number-conversion service by hand, (B) drive your own app's SOAP consume + exposed endpoint.\n\nBody is raw XML for SOAP calls; keep the SOAPAction header exactly as given (quotes included). SOAP needs PHP ext-soap enabled; the external calls need internet. Edit `base_url` if needed. (REST consuming moved to Day 1 - see the Day 1 collection, requests 9-10.)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [

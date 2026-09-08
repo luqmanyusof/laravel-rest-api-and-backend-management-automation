@@ -5,9 +5,9 @@
 
 **Use case for the whole course:** a **User Management** API (Application Programming Interface).
 Today you start from **nothing** — you create a brand-new Laravel 12 project, build a REST
-(Representational State Transfer) **CRUD** (Create, Read, Update, Delete) API for users, add a
-related **`user_profiles`** table with a migration, **seed** realistic data (a profile for every
-user), and test the whole thing in **Postman**.
+(Representational State Transfer) **CRUD** (Create, Read, Update, Delete) API for users, **seed**
+realistic data (a profile for every user), **consume** an external REST API (live currency rates),
+add a related **`user_profiles`** table with a migration, and test the whole thing in **Postman**.
 
 **Stack:** Laravel 12, PHP (Hypertext Preprocessor) 8.3, Composer, MySQL (the SQL — Structured
 Query Language — database, via **Laragon**), Postman, VS Code.
@@ -51,21 +51,26 @@ model binding** lets Laravel fetch a record straight from the id in the URL.
 - A **`user_profiles`** table (one-to-one with users), created by a migration
 - **Seed data:** ~10 users, each with a linked profile
 - `GET/PUT /api/users/{id}/profile` — read and update a user's profile
+- A controller that **consumes** an external REST API (live currency exchange, plus a POST) —
+  calling *someone else's* API, in contrast to the one you build
 - A **Postman collection** that exercises every endpoint
 - **Mailpit** configured + a **simple test email** sent into a local inbox (the base for Day 2's
   alerts)
 
-**What is NOT in scope today:** input validation, custom error handling, and authentication
-(Laravel Sanctum) — Day 1 stays focused on **building, seeding and testing** the API. (We do send
-one simple test email at the end; the *automatic failure alerts* built on it are Day 2. SOAP —
-Simple Object Access Protocol — is Day 2; SFTP — SSH File Transfer Protocol — and cron are Day 3.)
+**What is NOT in scope today:** validation, custom error handling and authentication (Laravel
+Sanctum) on the **Users API you build** — that API stays focused on **building, seeding and
+testing**. (The REST *consumer* you write in Topic 7 *does* validate its input and fail gracefully,
+because it calls an unreliable external service — a different concern from your own CRUD endpoints.
+We also send one simple test email at the end; the *automatic failure alerts* built on it are Day 2.
+SOAP — Simple Object Access Protocol — is Day 2; SFTP — SSH File Transfer Protocol — and cron are
+Day 3.)
 
 **How this day builds (each topic is a prerequisite for the next — easy first):**
 1. Install the tools → 2. Create the blank project + database → 3. Learn the REST vocabulary
 (concept) → 4. Tour the fresh project → 5. Build the **Users CRUD API** → 6. **Seed** the users
-table → 7. Add the related **`user_profiles`** table (migration + relationship) → 8. **Seed
-profiles** + add the profile endpoints → 9. **Test everything in Postman** → 10. **Send a test
-email** with Mailpit (a bridge to Day 2).
+table → 7. **Consume** an external REST API (GET + POST) → 8. Add the related **`user_profiles`**
+table (migration + relationship) → 9. **Seed profiles** + add the profile endpoints → 10. **Test
+everything in Postman** → 11. **Send a test email** with Mailpit (a bridge to Day 2).
 
 > We build **bottom-up**: a working project first, then the API, then the data, then the related
 > table, then the tests. Nothing is "magic" later because you built each layer yourself.
@@ -300,7 +305,7 @@ protected function casts(): array
 
 **Key idea:** the User model, its table and its factory already exist. Today you **add an API
 layer** on top (Topic 5), **seed data** (Topic 6), and **extend it with a related table**
-(Topics 7–8).
+(Topics 8–9).
 
 **Checkpoint ✅** You can point to the User model, the users migration, the User factory, and
 where the API routes will live.
@@ -481,7 +486,7 @@ class UserController extends Controller
 turns `/api/users/5` into `User::findOrFail(5)` automatically. If the user doesn't exist, an API
 (JSON) request gets a clean **404** with no extra work.
 
-**Step 5 — a quick smoke test in Postman.** (Full testing is Topic 9 — this is just to prove the
+**Step 5 — a quick smoke test in Postman.** (Full testing is Topic 10 — this is just to prove the
 endpoint responds.)
 1. New request: **POST** `http://training-app.test/api/users`.
 2. **Body** tab → **raw** → set the dropdown to **JSON** → paste:
@@ -553,7 +558,246 @@ php artisan migrate:fresh --seed
 
 ---
 
-## Topic 7 — A related table: user_profiles (one-to-one)
+## Topic 7 — Consume a REST API: GET and POST
+
+**Goal:** so far you *built* an API; now call **someone else's** REST API from Laravel — the
+simplest kind of integration (an HTTP request and a JSON reply). We build it up **one step at a
+time**: first the barest call, then inputs, then error handling — and finish by **sending** data
+with a POST.
+
+**The services we'll call** (both free, **no key, no limit**):
+- **Frankfurter** — currency exchange rates (for the GET). `https://api.frankfurter.app/latest`
+- **JSONPlaceholder** — a fake API that pretends to save what you send and echoes it back with a
+  new `id` (for the POST). `https://jsonplaceholder.typicode.com/posts`
+
+**Laravel's HTTP client.** Laravel ships one (`Illuminate\Support\Facades\Http`) — nothing to
+install. `Http::get()` / `Http::post()` make the call; you read the reply as an array.
+
+---
+
+### Part 1 — the simplest possible call
+
+Make the call and hand back whatever comes out — no inputs, no error handling yet.
+
+```bash
+php artisan make:controller Api/ExchangeRateController
+```
+
+`app/Http/Controllers/Api/ExchangeRateController.php`:
+
+```php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Http;
+
+class ExchangeRateController extends Controller
+{
+    public function show()
+    {
+        // Call the API and return its JSON exactly as it came back
+        $response = Http::get('https://api.frankfurter.app/latest?from=USD&to=MYR');
+
+        return $response->json();
+    }
+}
+```
+
+Route it in `routes/api.php`:
+
+```php
+use App\Http\Controllers\Api\ExchangeRateController;
+
+Route::get('/exchange', [ExchangeRateController::class, 'show']);
+```
+
+**Test.** A **GET** on `http://training-app.test/api/exchange` → you get the raw JSON back:
+`{ "amount": 1.0, "base": "USD", "date": "…", "rates": { "MYR": 4.71 } }`. **That's a REST call:
+one line, JSON in return.**
+
+---
+
+### Part 2 — accept input and shape the response
+
+Hard-coding `USD`/`MYR` isn't useful. Read `from`, `to` and `amount` from the query string, and
+return a tidy result instead of the raw dump. Replace the method:
+
+```php
+use Illuminate\Http\Request;   // add this import at the top
+
+public function show(Request $request)
+{
+    $from   = strtoupper($request->query('from', 'USD'));
+    $to     = strtoupper($request->query('to', 'MYR'));
+    $amount = (float) $request->query('amount', 1);
+
+    // Pass the query as an array — Http builds "?from=…&to=…" for you
+    $response = Http::get('https://api.frankfurter.app/latest', [
+        'from' => $from,
+        'to'   => $to,
+    ]);
+
+    $rate = $response['rates'][$to];
+
+    return response()->json([
+        'from'      => $from,
+        'to'        => $to,
+        'rate'      => $rate,
+        'amount'    => $amount,
+        'converted' => round($amount * $rate, 2),
+        'as_of'     => $response['date'] ?? null,
+    ]);
+}
+```
+
+**Test.** `http://training-app.test/api/exchange?from=USD&to=MYR&amount=100` → a clean object with
+`rate` and `converted` (amount × rate).
+
+---
+
+### Part 3 — validate input and handle failure
+
+Right now a bad currency (`to=ZZZ`) or a dead service would throw an error. Add **validation** and a
+**try/catch**, and check the rate actually came back:
+
+```php
+public function show(Request $request)
+{
+    $data = $request->validate([
+        'from'   => ['required', 'string', 'size:3'],
+        'to'     => ['required', 'string', 'size:3'],
+        'amount' => ['nullable', 'numeric', 'min:0'],
+    ]);
+
+    $from   = strtoupper($data['from']);
+    $to     = strtoupper($data['to']);
+    $amount = $data['amount'] ?? 1;
+
+    try {
+        $response = Http::timeout(10)->get('https://api.frankfurter.app/latest', [
+            'from' => $from,
+            'to'   => $to,
+        ]);
+    } catch (\Throwable $e) {
+        report($e);   // log the real detail
+        return response()->json(['message' => 'The exchange-rate service is unavailable.'], 503);
+    }
+
+    // No rate for that pair → bad currency code, or an upstream problem
+    if ($response->failed() || ! isset($response['rates'][$to])) {
+        return response()->json(['message' => "Could not get a rate for {$from} to {$to}."], 422);
+    }
+
+    $rate = $response['rates'][$to];
+
+    return response()->json([
+        'from'      => $from,
+        'to'        => $to,
+        'rate'      => $rate,
+        'amount'    => $amount,
+        'converted' => round($amount * $rate, 2),
+        'as_of'     => $response['date'] ?? null,
+    ]);
+}
+```
+
+**Test.** `?from=USD&to=MYR&amount=100` → **200**; `?from=USD&to=ZZZ` → a clean **422**, not a
+crash. (This is the same "fail gracefully" habit you'll use for SOAP on Day 2.)
+
+**Checkpoint ✅ (GET)** Each step returns more useful output than the last, ending with a validated,
+crash-proof endpoint.
+
+---
+
+### Part 4 — send data with POST
+
+`GET` **reads**; `POST` **sends**. Now build an endpoint that takes some data and posts it to an
+external API. We'll use **JSONPlaceholder**, which pretends to create the record and echoes it back
+with a new `id`.
+
+```bash
+php artisan make:controller Api/RemotePostController
+```
+
+`app/Http/Controllers/Api/RemotePostController.php`:
+
+```php
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+
+class RemotePostController extends Controller
+{
+    // POST /api/remote-posts   { "title": "...", "body": "..." }
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'body'  => ['required', 'string'],
+        ]);
+
+        try {
+            // Http::post sends the array as a JSON body
+            $response = Http::timeout(10)->post('https://jsonplaceholder.typicode.com/posts', [
+                'title'  => $data['title'],
+                'body'   => $data['body'],
+                'userId' => 1,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['message' => 'The remote API is unavailable.'], 503);
+        }
+
+        if ($response->failed()) {
+            return response()->json(['message' => 'The remote API rejected the request.'], 502);
+        }
+
+        // JSONPlaceholder echoes the "created" record back with a new id
+        return response()->json([
+            'message' => 'Sent to the remote API.',
+            'created' => $response->json(),
+        ], 201);
+    }
+}
+```
+
+Route it:
+
+```php
+use App\Http\Controllers\Api\RemotePostController;
+
+Route::post('/remote-posts', [RemotePostController::class, 'store']);
+```
+
+**Test in Postman.** A **POST** on `http://training-app.test/api/remote-posts`, Body → raw → JSON:
+`{"title": "Hello", "body": "From Laravel"}` → **201** with `created` containing your data and a
+new `id` (JSONPlaceholder returns `101`).
+
+**Checkpoint ✅ (POST)** Your endpoint accepts JSON, forwards it to the external API with
+`Http::post`, and returns the created record.
+
+> **In the collection:** both calls are in the provided `Day1-User-API.postman_collection.json` —
+> request **9** (GET exchange) and request **10** (POST remote-posts). Import it in Topic 10 to skip
+> the typing.
+
+**Common problems**
+- *`Could not resolve host`* → no internet, or a proxy is blocking the API host.
+- *GET gives 422 for a real currency* → check the 3-letter ISO code (`USD`, `EUR`, `MYR`, `SGD`, …).
+- *POST body ignored* → in Postman set Body → **raw → JSON** (not Text/form-data).
+
+> **Note:** consuming a REST API is the gentle version of integration. On **Day 2** you'll do the
+> same job — call a remote service, map the answer — over **SOAP**, which adds an XML contract, an
+> envelope and a `SOAPAction` header. Watch how much heavier it feels than these one-line REST calls.
+
+---
+
+## Topic 8 — A related table: user_profiles (one-to-one)
 
 **Goal:** add a second table that **belongs to** a user, and wire up the Eloquent relationship. A
 user **has one** profile (phone + bio).
@@ -622,7 +866,7 @@ public function profile()
 
 ---
 
-## Topic 8 — Seed profiles + add the profile API
+## Topic 9 — Seed profiles + add the profile API
 
 **Goal:** give **every** seeded user a profile, then expose endpoints to read and update it.
 
@@ -739,7 +983,7 @@ Route::put('/users/{user}/profile', [ProfileController::class, 'update']);
 
 ---
 
-## Topic 9 — Test everything in Postman
+## Topic 10 — Test everything in Postman
 
 **Goal:** exercise the full API in Postman and confirm each endpoint behaves. (First time using
 Postman properly — follow closely.)
@@ -748,7 +992,7 @@ Postman properly — follow closely.)
 requests) is provided so you don't type each one by hand:
 **`Day1-User-API.postman_collection.json`** (in the course folder). In Postman click **Import**
 (top-left) → drag the file in (or **Choose Files**) → **Import**. A collection named
-**"Day 1 — User API (Laravel)"** appears in the left sidebar with all 8 requests ready to send.
+**"Day 1 — User API (Laravel)"** appears in the left sidebar with all 10 requests ready to send.
 
 **Step 2 — check the address.** The collection carries a `base_url` variable set to
 `http://training-app.test`. If your app is on a different address, open the collection → the
@@ -767,6 +1011,8 @@ contains and what each should return:
 | 6 | PUT | `{{base_url}}/api/users/1/profile` | `{"phone":"012-3456789","bio":"Team lead"}` | **200**, updated profile |
 | 7 | DELETE | `{{base_url}}/api/users/12` | — | **204**, empty body |
 | 8 | GET | `{{base_url}}/api/users/99999` | — | **404**, "not found" JSON |
+| 9 | GET | `{{base_url}}/api/exchange?from=USD&to=MYR&amount=100` | — | **200**, converted rate (Topic 7) |
+| 10 | POST | `{{base_url}}/api/remote-posts` | `{"title":"Hello","body":"From Laravel"}` | **201**, created record with an `id` (Topic 7) |
 
 > **Notes:** the imported requests already have their bodies set to **raw → JSON**. Request **2**
 > creates the user that request **7** deletes — after sending **2**, copy the `id` from its
@@ -780,7 +1026,7 @@ contains and what each should return:
 
 ---
 
-## Topic 10 — Send a test email with Mailpit (a bridge to Day 2)
+## Topic 11 — Send a test email with Mailpit (a bridge to Day 2)
 
 **Goal:** get Laravel sending email, safely, into a local test inbox — and send your first
 message. You'll build on this on Day 2 to fire **failure alerts** automatically.
@@ -876,6 +1122,8 @@ You should now have:
 - `app/Http/Controllers/Api/ProfileController.php` — read/update a user's profile.
 - `app/Models/UserProfile.php` + the `user_profiles` table — a one-to-one relationship with users.
 - `database/seeders/DatabaseSeeder.php` + `UserProfileFactory` — **11 users, each with a profile**.
+- `app/Http/Controllers/Api/ExchangeRateController.php` + `RemotePostController.php` — **consuming**
+  an external REST API (`GET /api/exchange`, `POST /api/remote-posts`).
 - A Postman collection ("User API") that exercises every endpoint.
 - **Mailpit** running, `.env` mail settings pointing at it, and a proven test-email send — ready
   for Day 2's automatic alerts.

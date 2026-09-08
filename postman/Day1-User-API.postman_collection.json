@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d1a90000-0000-4000-8000-000000000001",
     "name": "Day 1 - User API (Laravel)",
-    "description": "Predefined requests for the Day 1 Users & Profiles CRUD API.\n\nImport, then send top to bottom. Edit the `base_url` collection variable if your app is on a different address. No auth is used in this training.",
+    "description": "Predefined requests for Day 1: the Users & Profiles CRUD API (1-8) plus the REST-consumer endpoints from Topic 7 (9-10).\n\nImport, then send top to bottom. Edit the `base_url` collection variable if your app is on a different address. No auth is used in this training. Requests 9-10 need internet.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -242,6 +242,81 @@
           ]
         },
         "description": "Nonexistent user. Expect 404 JSON."
+      },
+      "response": []
+    },
+    {
+      "name": "9. GET - currency exchange (Frankfurter)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/exchange?from=USD&to=MYR&amount=100",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "exchange"
+          ],
+          "query": [
+            {
+              "key": "from",
+              "value": "USD"
+            },
+            {
+              "key": "to",
+              "value": "MYR"
+            },
+            {
+              "key": "amount",
+              "value": "100"
+            }
+          ]
+        },
+        "description": "Topic 7: consume an external REST API through our endpoint. Expect 200 with rate + converted amount; a bad currency (to=ZZZ) gives 422."
+      },
+      "response": []
+    },
+    {
+      "name": "10. POST - send data (JSONPlaceholder)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Hello\",\n  \"body\": \"From Laravel\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/remote-posts",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "remote-posts"
+          ]
+        },
+        "description": "Topic 7: POST data to our endpoint, which forwards it to JSONPlaceholder. Expect 201 with the created record (id 101)."
       },
       "response": []
     }

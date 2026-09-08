@@ -36,9 +36,10 @@ automate a routine task with cron.
 
 ## Day 1 — [Build a Laravel 12 REST API (Users & Profiles)](day1.md)
 
-*Start from a blank Laravel 12 project and build up: a Users CRUD API, seeded data, a related
-`user_profiles` table (one-to-one), a full Postman test pass, and a first test email via Mailpit.
-No validation/auth today — the focus is building, seeding and testing.*
+*Start from a blank Laravel 12 project and build up: a Users CRUD API, seeded data, consuming an
+external REST API (GET + POST), a related `user_profiles` table (one-to-one), a full Postman test
+pass, and a first test email via Mailpit. No validation/auth on the API you build — the focus is
+building, seeding and testing.*
 
 | # | Topic | Objective | Outcome |
 |---|---|---|---|
@@ -48,27 +49,27 @@ No validation/auth today — the focus is building, seeding and testing.*
 | 4 | [Tour a fresh Laravel project](day1.md#topic-4--tour-a-fresh-laravel-project) | See what a new Laravel ships: User model, migration, factory, seeder | Can point to the User model, its migration/factory, and where API routes live |
 | 5 | [Build the Users CRUD API](day1.md#topic-5--build-the-users-crud-api) | Scaffold and fill the five CRUD endpoints returning JSON (route model binding) | `POST`/`GET /api/users` work; passwords never appear in responses |
 | 6 | [Seed the users table](day1.md#topic-6--seed-the-users-table) | Use the factory + seeder to create ~10 users plus a known admin | `users` has 11 rows incl. `admin@test.com`; `GET /api/users` lists them |
-| 7 | [A related table: user_profiles](day1.md#topic-7--a-related-table-user_profiles-one-to-one) | Add a `user_profiles` migration + model and a one-to-one relationship | `user_profiles` table exists; `hasOne`/`belongsTo` wired between the models |
-| 8 | [Seed profiles + profile API](day1.md#topic-8--seed-profiles--add-the-profile-api) | Seed a profile for every user and expose read/update endpoints | `user_profiles` has 11 rows; `GET`/`PUT /api/users/{id}/profile` work |
-| 9 | [Test everything in Postman](day1.md#topic-9--test-everything-in-postman) | Build a Postman collection and exercise every endpoint | All CRUD + profile requests return the expected JSON/status |
-| 10 | [Send a test email with Mailpit](day1.md#topic-10--send-a-test-email-with-mailpit-a-bridge-to-day-2) | Set up Mailpit, point Laravel at it, and send a simple email | A test email lands in the Mailpit inbox (`http://localhost:8025`) |
+| 7 | [Consume a REST API: GET & POST](day1.md#topic-7--consume-a-rest-api-get-and-post) | Build up from the simplest `Http::get` to a validated call, then POST data to another API | `GET /api/exchange` returns a converted rate; `POST /api/remote-posts` sends data and gets it back with an id |
+| 8 | [A related table: user_profiles](day1.md#topic-8--a-related-table-user_profiles-one-to-one) | Add a `user_profiles` migration + model and a one-to-one relationship | `user_profiles` table exists; `hasOne`/`belongsTo` wired between the models |
+| 9 | [Seed profiles + profile API](day1.md#topic-9--seed-profiles--add-the-profile-api) | Seed a profile for every user and expose read/update endpoints | `user_profiles` has 11 rows; `GET`/`PUT /api/users/{id}/profile` work |
+| 10 | [Test everything in Postman](day1.md#topic-10--test-everything-in-postman) | Build a Postman collection and exercise every endpoint | All CRUD + profile + REST requests return the expected JSON/status |
+| 11 | [Send a test email with Mailpit](day1.md#topic-11--send-a-test-email-with-mailpit-a-bridge-to-day-2) | Set up Mailpit, point Laravel at it, and send a simple email | A test email lands in the Mailpit inbox (`http://localhost:8025`) |
 
 ---
 
 ## Day 2 — [SOAP Integration & Failure Notifications](day2.md)
 
-*Consume and expose SOAP services, handle faults, and send an automatic alert email on failure.
-Consume before expose; try each call by hand in Postman before coding.*
+*Consume and expose SOAP services, and send an automatic alert email on failure. Consume before
+expose; try each call by hand in Postman first. (REST was Day 1; today is the SOAP contrast.)*
 
 | # | Topic | Objective | Outcome |
 |---|---|---|---|
 | 1 | [Enable SOAP, ready tools & start VM download](day2.md#topic-1--enable-soap-ready-your-tools--start-the-vm-download) | Enable PHP's `ext-soap`, start Mailpit, and begin the VirtualBox + Ubuntu downloads for Day 3 | `SOAP OK`; Mailpit inbox open; both installers downloading to disk |
 | 2 | [SOAP vs REST (concept)](day2.md#topic-2--soap-vs-rest-concept) | Understand what SOAP is: WSDL, XML envelope, SOAP faults | Can explain a WSDL, an envelope, and how a SOAP error is reported |
-| 3 | [Consume a SOAP service → database](day2.md#topic-3--consume-an-external-soap-service-and-map-it-to-the-database) | Call a SOAP service by hand in Postman, then automate it in Laravel and store the result | `POST /api/conversions` returns the number in words and saves a DB row |
-| 4 | [Fault handling: faults, timeouts, retry](day2.md#topic-4--fault-handling-soapfault-timeouts--a-simple-retry) | Make the SOAP call robust against faults, timeouts and transient failures | A broken service → graceful **503** + logged warnings, not a 500 crash |
-| 5 | [Expose your own SOAP endpoint](day2.md#topic-5--expose-your-own-soap-endpoint-soapserver) | Turn Laravel into a SOAP service and test it in Postman | `getUserByEmail` returns user XML; an unknown email → a `<soap:Fault>` |
-| 6 | [Email setup with Mailpit](day2.md#topic-6--email-setup-with-mailpit) | Send email from Laravel into the local Mailpit inbox via a Notification | A test email appears in the Mailpit inbox (`http://localhost:8025`) |
-| 7 | [Auto-email on failure (finale)](day2.md#topic-7--auto-email-on-integration-failure-finale) | Send an alert email automatically whenever an integration fails (one line, no queue) | A failing call → **503** + an alert email delivered to Mailpit |
+| 3 | [Consume a SOAP service → database](day2.md#topic-3--consume-an-external-soap-service-and-map-it-to-the-database) | Call a SOAP service by hand in Postman, then automate it in Laravel, store the result and fail gracefully | `POST /api/conversions` returns the number in words + saves a row; a dead service → clean **503** |
+| 4 | [Expose your own SOAP endpoint](day2.md#topic-4--expose-your-own-soap-endpoint-soapserver) | Turn Laravel into a SOAP service and test it in Postman | `getUserByEmail` returns user XML; an unknown email → a `<soap:Fault>` |
+| 5 | [Email setup with Mailpit](day2.md#topic-5--email-setup-with-mailpit) | Send email from Laravel into the local Mailpit inbox via a Notification | A test email appears in the Mailpit inbox (`http://localhost:8025`) |
+| 6 | [Auto-email on failure (finale)](day2.md#topic-6--auto-email-on-integration-failure-finale) | Send an alert email automatically whenever an integration fails (one line, no queue) | A failing call → **503** + an alert email delivered to Mailpit |
 
 ---
 

@@ -3,10 +3,12 @@
 > *Part of **Practical Laravel Backend Integration & Automation** — REST & SOAP APIs, SFTP file
 > transfers, and cron-scheduled jobs (Day 2 of 3).*
 
-Today you integrate with **SOAP** (Simple Object Access Protocol) — the older, contract-based
-web-service style still used by banks, government, telcos and legacy enterprise systems. You will
-**consume** an external SOAP service, **expose** your own SOAP endpoint, handle **faults** safely,
-and send an **email alert automatically** whenever an integration fails.
+Today you integrate with other systems over the web. The main event is **SOAP** (Simple Object
+Access Protocol) — the older, contract-based style still used by banks, government, telcos and
+legacy enterprise systems: you'll **consume** an external SOAP service and **expose** your own.
+You'll also send an **email alert automatically** whenever an integration fails. (You already
+consumed a **REST** — Representational State Transfer — API on Day 1; today's SOAP is the heavier,
+contract-based contrast.)
 
 **You also start tomorrow's downloads in the background today.** The VirtualBox installer and
 the Ubuntu Server ISO (the disc-image installer file) are large (~3 GB total), so you begin
@@ -14,28 +16,25 @@ downloading them early (Topic 1) so the files are ready on disk for Day 3. **No 
 — just downloading.**
 
 **Stack:** Laravel 12, PHP (Hypertext Preprocessor) 8.3 with `ext-soap` (PHP's built-in SOAP
-extension), MySQL (Laragon), Postman (used for both REST — Representational State Transfer — and
-SOAP), Mailpit (a local test email inbox built into Laragon), VirtualBox + Ubuntu 24.04 Server
-(downloads for Day 3).
+extension), MySQL (Laragon), Postman (your SOAP testing tool — same one from Day 1), Mailpit (a
+local test email inbox built into Laragon), VirtualBox + Ubuntu 24.04 Server (downloads for Day 3).
 
 **What you build today**
-- A service that calls an external SOAP API (Application Programming Interface) and stores the
-  result in your database
-- Safe fault handling: `SoapFault`, timeouts, and a simple retry
-- Your own SOAP endpoint (`getUserByEmail`) exposed from Laravel, tested in Postman
-- An **email alert** that fires automatically on any integration failure
+- A service that calls an external **SOAP** API (Application Programming Interface), stores the
+  result, and **fails gracefully** (a clean 503) if the service is down
+- Your own **SOAP endpoint** (`getUserByEmail`) exposed from Laravel, tested in Postman
+- An **email alert** that fires automatically when an integration fails
 - **The VirtualBox installer + Ubuntu 24.04 Server ISO downloaded** — ready to install on Day 3
 
-**What is NOT in scope today:** REST (Day 1), SFTP (SSH File Transfer Protocol) / scheduling
-(Day 3), production mail providers (we use Mailpit, a local test inbox that ships with Laragon —
-no signup needed).
+**What is NOT in scope today:** building *or* consuming a REST API (both were Day 1), SFTP (SSH
+File Transfer Protocol) / scheduling (Day 3), deep SOAP resilience (retries/queues), production
+mail providers (we use Mailpit, a local test inbox that ships with Laragon — no signup needed).
 
 **How this day builds (prerequisites first, easy first):**
 1. Enable SOAP + tools (setup) → 2. Learn **what SOAP is** vs REST (the vocabulary) →
-3. **Consume** a SOAP service — the easy direction, and you first try it **by hand in Postman**
-before writing code → 4. Make that call **robust** (faults, timeouts, retry) → 5. **Expose** your
-own SOAP service — the harder direction, tackled once you understand calls → 6. Set up **email**
-(a new prerequisite for alerts) → 7. Finale: **auto-email** when an integration fails.
+3. **Consume** a SOAP service (try it by hand in Postman first, then automate it, failing
+gracefully) → 4. **Expose** your own SOAP service → 5. Set up **email** (a new prerequisite for
+alerts) → 6. Finale: **auto-email** when an integration fails.
 
 > **Consume before expose, by-hand before code:** calling someone else's service is easier than
 > building your own, so we do that first — and we always poke a service manually in Postman
@@ -43,7 +42,7 @@ own SOAP service — the harder direction, tackled once you understand calls →
 
 > **Carry-over:** you need Day 1's Laravel app running in Laragon — continue in the **same
 > `C:\laragon\www\training-app`** you built on Day 1. If you're starting fresh on a new machine,
-> redo **Day 1 Topics 2 + 5–8** (`composer create-project` → set `.env` for MySQL →
+> redo **Day 1 Topics 2 and 5–9** (`composer create-project` → set `.env` for MySQL →
 > `php artisan install:api` → `php artisan migrate:fresh --seed`) — Laragon then serves it at
 > `http://training-app.test` with a seeded `admin@test.com` user, which today's SOAP examples use.
 
@@ -85,7 +84,7 @@ php -r "echo class_exists('SoapClient') ? 'SOAP OK' : 'SOAP MISSING';"
 Mailpit is a fake email server bundled with Laragon: your app "sends" mail and Mailpit catches
 it in a local web inbox, so nothing reaches real people. No signup, no external service.
 
-> **Recap:** you set Mailpit up on **Day 1 (Topic 10)** and already sent a test email through it.
+> **Recap:** you set Mailpit up on **Day 1 (Topic 11)** and already sent a test email through it.
 > If it's still running and your `.env` mail settings are in place, just confirm the inbox loads
 > and move on. The steps below are the quick version, in case you're starting fresh.
 
@@ -94,7 +93,7 @@ it in a local web inbox, so nothing reaches real people. No signup, no external 
 2. Open the Mailpit inbox in a browser: **`http://localhost:8025`**. You'll see an empty inbox.
 3. Keep this tab open. Mailpit listens for mail on SMTP (Simple Mail Transfer Protocol) port
    **1025** — you'll point Laravel at
-   it in Topic 6 (no username or password required).
+   it in Topic 5 (no username or password required).
 
 > **Don't see Mailpit in the menu?** Make sure you installed **Laragon Full** (recent versions
 > include it). If your build lacks it, download `mailpit.exe` from
@@ -131,9 +130,10 @@ Once both files are on disk, you're done with VM prep for today.
 
 **Goal:** understand what SOAP is and why you'd use it. Read this — no coding yet.
 
-**REST (yesterday)** is a *style*: URLs (Uniform Resource Locators) + HTTP (Hypertext Transfer
-Protocol) verbs + JSON (JavaScript Object Notation), loosely defined. **SOAP** is a *protocol*:
-strict rules, XML (Extensible Markup Language) only, with a formal contract.
+**REST** — the style you used on Day 1, both building your own API and consuming an external one —
+is loosely defined: URLs (Uniform Resource Locators) + HTTP (Hypertext Transfer Protocol) verbs +
+JSON (JavaScript Object Notation). **SOAP** is a *protocol*: strict rules, XML (Extensible Markup
+Language) only, with a formal contract.
 
 **The three things that define SOAP**
 
@@ -155,7 +155,7 @@ strict rules, XML (Extensible Markup Language) only, with a formal contract.
    The `<Body>` holds the actual call.
 
 3. **SOAP Faults (the errors)** — SOAP doesn't use HTTP status codes for business errors; it
-   returns a `<soap:Fault>` element. In PHP this arrives as a `SoapFault` exception (Topic 4).
+   returns a `<soap:Fault>` element. In PHP this arrives as a `SoapFault` exception (Topic 3).
 
 **When you'll meet SOAP:** bank/payment gateways, insurance, government tax portals, telco
 provisioning, older ERP (Enterprise Resource Planning) / CRM (Customer Relationship Management)
@@ -203,7 +203,7 @@ words — reliable and needs no keys:
 > **Ready-made requests:** a Postman collection for all of today's SOAP calls is provided —
 > **`Day2-SOAP-API.postman_collection.json`** (in the course folder). **Import** it and you'll have
 > folder **A. By hand** (the external calls in this phase) and folder **B. Your app** (used in
-> Topics 3–5). You can follow the steps below by hand, or just send the matching request.
+> Topics 3–4). You can follow the steps below by hand, or just send the matching request.
 
 **Step 1a — look at the contract (optional but useful).** In Postman, do a **GET** on
 `https://www.dataaccess.com/webservicesserver/NumberConversion.wso?WSDL`. The response is the
@@ -302,6 +302,8 @@ class NumberSoapService
 
     public function numberToWords(int $number): string
     {
+        ini_set('default_socket_timeout', '15');     // max seconds to wait for a reply
+
         $client = new SoapClient($this->wsdl, [
             'cache_wsdl'         => WSDL_CACHE_NONE, // avoid stale-contract issues while learning
             'connection_timeout' => 10,             // seconds to establish the connection
@@ -345,7 +347,14 @@ class ConversionController extends Controller
     {
         $data = $request->validate(['number' => ['required', 'integer', 'min:0']]);
 
-        $words = $soap->numberToWords($data['number']);   // SOAP call
+        try {
+            $words = $soap->numberToWords($data['number']);   // SOAP call
+        } catch (\Throwable $e) {
+            report($e);   // log the real detail
+            return response()->json([
+                'message' => 'The number-conversion service is unavailable. Please try later.',
+            ], 503);   // 503 Service Unavailable — the upstream service failed
+        }
 
         $conversion = Conversion::create([                // map result → DB
             'number' => $data['number'],
@@ -356,6 +365,11 @@ class ConversionController extends Controller
     }
 }
 ```
+
+> **Failing gracefully (no separate topic needed):** the `try/catch` turns any SOAP problem — a
+> `SoapFault`, a timeout, or the service being down — into a clean **503** with a friendly message,
+> never a 500 crash or a leaked stack trace. `report($e)` logs the real detail for you. (The finale,
+> Topic 6, adds one line right here to also email an alert.)
 
 In `routes/api.php`:
 
@@ -373,6 +387,8 @@ the SOAP service for you): `POST http://training-app.test/api/conversions`, Body
 - Response **201** with `words` = `"one thousand two hundred and thirty four"` — the same answer
   you got by hand in phase 1, now produced by your own endpoint.
 - A new row exists in the `conversions` table (check in HeidiSQL via Laragon's Database button).
+- Break it on purpose: add `-BROKEN` to the WSDL URL in the service and send again → a clean
+  **503** (not a 500 crash). Restore the URL afterwards.
 
 **Common problems**
 - *"Could not connect to host" / SSL error* → firewall or SSL (Secure Sockets Layer) inspection.
@@ -384,107 +400,7 @@ the SOAP service for you): `POST http://training-app.test/api/conversions`, Body
 
 ---
 
-## Topic 4 — Fault handling: SoapFault, timeouts & a simple retry
-
-**Goal:** make the integration robust. External services fail — your app must fail *gracefully*
-and predictably, not crash.
-
-**Three failure modes to handle:**
-1. **SoapFault** — the service returned an error.
-2. **Timeout** — the service is slow/unreachable and never answers.
-3. **Transient failure** — a blip that succeeds on a second try → **retry**.
-
-**Step 1 — set a socket timeout.** `connection_timeout` only covers *connecting*; the read
-timeout is PHP's `default_socket_timeout`. Set both:
-
-```php
-public function numberToWords(int $number): string
-{
-    ini_set('default_socket_timeout', '15');   // max seconds to wait for a reply
-
-    $client = new SoapClient($this->wsdl, [
-        'cache_wsdl'         => WSDL_CACHE_NONE,
-        'connection_timeout' => 10,
-        'exceptions'         => true,
-    ]);
-
-    $response = $client->NumberToWords(['ubiNum' => $number]);
-    return trim($response->NumberToWordsResult);
-}
-```
-
-**Step 2 — wrap the call with try/catch + retry.** Put the two `use` lines at the **top** of the
-file (with the existing `use SoapClient;`, under `<?php` — not inside the class, or PHP reads
-`use SoapFault;` as a *trait* and errors with "Trait SoapFault not found"), then add this method
-to the service class:
-
-```php
-use SoapFault;
-use Illuminate\Support\Facades\Log;
-
-public function numberToWordsWithRetry(int $number, int $attempts = 3): string
-{
-    $lastError = null;
-
-    for ($try = 1; $try <= $attempts; $try++) {
-        try {
-            return $this->numberToWords($number);        // success → return immediately
-        } catch (SoapFault $e) {
-            $lastError = $e;
-            Log::warning("SOAP attempt {$try} failed: {$e->getMessage()}");
-            sleep(1);                                     // brief pause before retrying
-        }
-    }
-
-    throw new \RuntimeException(
-        "SOAP call failed after {$attempts} attempts: " . $lastError->getMessage(),
-        0, $lastError
-    );
-}
-```
-
-> The final `RuntimeException` gives the rest of the app one predictable exception type to catch
-> (Topic 7 emails on it), instead of leaking SOAP internals everywhere.
-
-**Step 3 — use the safe method** in the controller and return a clean error:
-
-```php
-public function store(Request $request, NumberSoapService $soap)
-{
-    $data = $request->validate(['number' => ['required', 'integer', 'min:0']]);
-
-    try {
-        $words = $soap->numberToWordsWithRetry($data['number']);
-    } catch (\RuntimeException $e) {
-        return response()->json([
-            'message' => 'The number-conversion service is unavailable. Please try later.',
-        ], 503);   // 503 Service Unavailable — an upstream dependency failed
-    }
-
-    $conversion = Conversion::create(['number' => $data['number'], 'words' => $words]);
-    return response()->json($conversion, 201);
-}
-```
-
-**Step 4 — force a failure to prove it.** Temporarily add `-BROKEN` to the WSDL filename in the
-service, send the request, and watch:
-- The response is a clean **503** (no stack trace).
-- `storage/logs/laravel.log` shows three "SOAP attempt failed" warnings.
-
-Then restore the correct URL.
-
-**Checkpoint ✅** A broken service produces a graceful 503 + logged warnings, not a 500 crash.
-A working service still returns 201.
-
-**Security note:** never return the raw `SoapFault` message to the client — it can leak internal
-endpoints and stack details. Log the detail, return a generic message.
-
-> ⏳ **Background task:** check that both downloads from Topic 1.3 have finished and the two files
-> (VirtualBox installer + Ubuntu ISO) are saved on disk. That's all — installation is a Day 3 job.
-
----
-
-## Topic 5 — Expose your own SOAP endpoint (SoapServer)
+## Topic 4 — Expose your own SOAP endpoint (SoapServer)
 
 **Goal:** turn your Laravel app *into* a SOAP service. Other systems call `getUserByEmail` and
 get user details back. Test it with Postman by sending a raw SOAP envelope.
@@ -659,7 +575,7 @@ the typing.)*
 
 ---
 
-## Topic 6 — Email setup with Mailpit
+## Topic 5 — Email setup with Mailpit
 
 **Goal:** send email from Laravel into your local Mailpit inbox (started in Topic 1.2).
 
@@ -668,7 +584,7 @@ class representing "a message to send someone" that goes out by email.
 Because Mailpit runs on your own machine, there are **no credentials** — just a host and port.
 
 **Step 1 — point `.env` at Mailpit** (SMTP on `127.0.0.1:1025`, no username/password/encryption).
-*You already did this on Day 1 (Topic 10) — confirm the lines are present, or set them if you're
+*You already did this on Day 1 (Topic 11) — confirm the lines are present, or set them if you're
 starting fresh:*
 
 ```dotenv
@@ -751,7 +667,7 @@ Visit `http://training-app.test/api/test-mail`.
 
 **Checkpoint ✅** The email appears in your **Mailpit inbox** (`http://localhost:8025`) within a
 second or two, with red "error" styling and your subject line. **Click it to open** and read the
-headers and body — the same way you viewed the Day 1 test email (Day 1, Topic 10).
+headers and body — the same way you viewed the Day 1 test email (Day 1, Topic 11).
 
 **Common problems**
 - *Nothing arrives* → Mailpit isn't running (start it in Laragon), or you forgot
@@ -763,17 +679,17 @@ headers and body — the same way you viewed the Day 1 test email (Day 1, Topic 
 
 ---
 
-## Topic 7 — Auto-email on integration failure (finale)
+## Topic 6 — Auto-email on integration failure (finale)
 
-**Goal:** tie it together — when a SOAP integration fails after retries, automatically send the
-alert email you built in Topic 6. That's it: one line in the failure path.
+**Goal:** tie it together — when the SOAP call fails, automatically send the alert email you built
+in Topic 5. That's it: two lines added to the failure path from Topic 3.
 
 **The whole idea in one sentence:** in the `catch` block, before returning the error, send the
 notification. No queues, no workers — the email goes out right there.
 
-**Step 1 — fire the alert from the failure path.** In `ConversionController::store` (Topic 4),
+**Step 1 — fire the alert from the failure path.** In `ConversionController::store` (Topic 3),
 add the two `use` lines at the **top** of the controller file (with the others, under `<?php`),
-then send the notification inside the `catch` block:
+then send the notification inside the `catch` block you already have:
 
 ```php
 use Illuminate\Support\Facades\Notification;
@@ -784,8 +700,9 @@ public function store(Request $request, NumberSoapService $soap)
     $data = $request->validate(['number' => ['required', 'integer', 'min:0']]);
 
     try {
-        $words = $soap->numberToWordsWithRetry($data['number']);
-    } catch (\RuntimeException $e) {
+        $words = $soap->numberToWords($data['number']);
+    } catch (\Throwable $e) {
+        report($e);   // log the real detail
         // Integration failed → email the team, then return a clean error
         Notification::route('mail', 'admin@test.com')
             ->notify(new IntegrationFailedNotification('Number SOAP service', $e->getMessage()));
@@ -813,7 +730,7 @@ public function store(Request $request, NumberSoapService $soap)
 - A failing call → **503** + an alert email in Mailpit.
 
 **Common problems**
-- *No email* → Mailpit isn't running, or the `.env` mail settings are wrong (Topic 6). Re-run
+- *No email* → Mailpit isn't running, or the `.env` mail settings are wrong (Topic 5). Re-run
   `php artisan config:clear`.
 - *No 503, you got a 500* → the alert line threw; check `storage/logs/laravel.log`.
 
@@ -827,11 +744,10 @@ public function store(Request $request, NumberSoapService $soap)
 ## End-of-Day 2 — final working state
 
 You should now have:
-- `app/Services/NumberSoapService.php` — consumes external SOAP with timeout + retry, throwing a
-  clean `RuntimeException` on total failure.
+- `app/Services/NumberSoapService.php` — consumes external SOAP with a socket timeout.
 - `app/Models/Conversion.php` + `conversions` table — where SOAP results are stored.
-- `app/Http/Controllers/Api/ConversionController.php` — calls SOAP, saves the result, emails on
-  failure.
+- `app/Http/Controllers/Api/ConversionController.php` — calls SOAP, saves the result, fails
+  gracefully (503) and emails on failure.
 - `public/userinfo.wsdl` + `app/Soap/UserInfoSoapService.php` +
   `app/Http/Controllers/SoapServerController.php` — your **exposed** SOAP endpoint at `/api/soap`.
 - `app/Notifications/IntegrationFailedNotification.php` — the **email alert**.
@@ -842,12 +758,13 @@ You should now have:
 **Remove the temporary `/api/test-mail` route and restore the WSDL URL** before moving on.
 
 **Security / robustness recap**
-- Raw `SoapFault` details are **logged, not returned** — no internal leakage.
+- Raw `SoapFault`/exception details are **logged (`report`), not returned** — no internal leakage.
 - Failures degrade to a friendly **503**, never a 500 crash or stack trace.
-- Retries absorb transient blips before we give up and alert.
 - Your exposed SOAP service throws a controlled fault for unknown users (no data leak).
 
 **Stretch goals (if time remains)**
+- Make the SOAP call **retry** on a transient blip (a small `for` loop around the call).
+- Store the SOAP result differently, or add a second column to `conversions`.
 - Add a second WSDL operation (e.g. `getUserCount`) and implement it.
 - Send alerts to multiple recipients: `Notification::route('mail', ['a@x.test','b@x.test'])`.
 
