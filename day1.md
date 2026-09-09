@@ -566,7 +566,10 @@ time**: first the barest call, then inputs, then error handling — and finish b
 with a POST.
 
 **The services we'll call** (both free, **no key, no limit**):
-- **Frankfurter** — currency exchange rates (for the GET). `https://api.frankfurter.app/latest`
+- **Frankfurter** — currency exchange rates (for the GET). Base URL `https://api.frankfurter.dev/v2`,
+  docs at <https://frankfurter.dev>. We use `/rates?base=USD&quotes=MYR`, which replies with a
+  **list of rows**, one per quoted currency:
+  `[ { "date": "2026-01-05", "base": "USD", "quote": "MYR", "rate": 4.05 } ]`
 - **JSONPlaceholder** — a fake API that pretends to save what you send and echoes it back with a
   new `id` (for the POST). `https://jsonplaceholder.typicode.com/posts`
 
@@ -598,7 +601,7 @@ class ExchangeRateController extends Controller
     public function show()
     {
         // Call the API and return its JSON exactly as it came back
-        $response = Http::get('https://api.frankfurter.app/latest?from=USD&to=MYR');
+        $response = Http::get('https://api.frankfurter.dev/v2/rates?base=USD&quotes=MYR');
 
         return $response->json();
     }
@@ -614,8 +617,13 @@ Route::get('/exchange', [ExchangeRateController::class, 'show']);
 ```
 
 **Test.** A **GET** on `http://training-app.test/api/exchange` → you get the raw JSON back:
-`{ "amount": 1.0, "base": "USD", "date": "…", "rates": { "MYR": 4.71 } }`. **That's a REST call:
+`[ { "date": "…", "base": "USD", "quote": "MYR", "rate": 4.05 } ]`. **That's a REST call:
 one line, JSON in return.**
+
+> **Note the shape.** `/v2/rates` always answers with a **JSON array** — one row per quoted
+> currency — even when you ask for a single one. So the rate lives at `[0]['rate']`, not at a
+> top-level key. (There is also `/v2/rate/USD/MYR`, which returns that same row **unwrapped** as a
+> plain object. We stay on `/rates` because it takes query parameters, which is what we build next.)
 
 ---
 
@@ -633,21 +641,22 @@ public function show(Request $request)
     $to     = strtoupper($request->query('to', 'MYR'));
     $amount = (float) $request->query('amount', 1);
 
-    // Pass the query as an array — Http builds "?from=…&to=…" for you
-    $response = Http::get('https://api.frankfurter.app/latest', [
-        'from' => $from,
-        'to'   => $to,
+    // Pass the query as an array — Http builds "?base=…&quotes=…" for you
+    $response = Http::get('https://api.frankfurter.dev/v2/rates', [
+        'base'   => $from,
+        'quotes' => $to,
     ]);
 
-    $rate = $response['rates'][$to];
+    // The reply is a list of rows — we asked for one currency, so take the first
+    $row = $response->json()[0];
 
     return response()->json([
         'from'      => $from,
         'to'        => $to,
-        'rate'      => $rate,
+        'rate'      => $row['rate'],
         'amount'    => $amount,
-        'converted' => round($amount * $rate, 2),
-        'as_of'     => $response['date'] ?? null,
+        'converted' => round($amount * $row['rate'], 2),
+        'as_of'     => $row['date'] ?? null,
     ]);
 }
 ```
@@ -659,8 +668,10 @@ public function show(Request $request)
 
 ### Part 3 — validate input and handle failure
 
-Right now a bad currency (`to=ZZZ`) or a dead service would throw an error. Add **validation** and a
-**try/catch**, and check the rate actually came back:
+Right now a bad currency (`to=ZZZ`) or a dead service would throw an error — Frankfurter answers a
+bad code with **422** and `{"status":422,"message":"invalid currency: ZZZ"}`, so `json()[0]` would
+blow up on a missing index. Add **validation** and a **try/catch**, and check the rate actually came
+back:
 
 ```php
 public function show(Request $request)
@@ -676,21 +687,23 @@ public function show(Request $request)
     $amount = $data['amount'] ?? 1;
 
     try {
-        $response = Http::timeout(10)->get('https://api.frankfurter.app/latest', [
-            'from' => $from,
-            'to'   => $to,
+        $response = Http::timeout(10)->get('https://api.frankfurter.dev/v2/rates', [
+            'base'   => $from,
+            'quotes' => $to,
         ]);
     } catch (\Throwable $e) {
         report($e);   // log the real detail
         return response()->json(['message' => 'The exchange-rate service is unavailable.'], 503);
     }
 
-    // No rate for that pair → bad currency code, or an upstream problem
-    if ($response->failed() || ! isset($response['rates'][$to])) {
+    $row = $response->json()[0] ?? null;
+
+    // No row back → bad currency code (Frankfurter answers 422), or an upstream problem
+    if ($response->failed() || ! isset($row['rate'])) {
         return response()->json(['message' => "Could not get a rate for {$from} to {$to}."], 422);
     }
 
-    $rate = $response['rates'][$to];
+    $rate = $row['rate'];
 
     return response()->json([
         'from'      => $from,
@@ -698,7 +711,7 @@ public function show(Request $request)
         'rate'      => $rate,
         'amount'    => $amount,
         'converted' => round($amount * $rate, 2),
-        'as_of'     => $response['date'] ?? null,
+        'as_of'     => $row['date'] ?? null,
     ]);
 }
 ```
