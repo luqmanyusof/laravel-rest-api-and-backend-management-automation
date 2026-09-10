@@ -64,7 +64,7 @@ called in the steps below.
 Open the netplan file (name may vary — `ls /etc/netplan/` to check):
 
 ```
-sudo nano /etc/netplan/50-cloud-init.yaml
+sudo nano /etc/netplan/network.yaml
 ```
 
 Set its contents to (**use spaces, never tabs** — YAML rejects tabs):
@@ -84,7 +84,7 @@ Save (Ctrl+O, Enter) and exit (Ctrl+X).
 Fix permissions and apply:
 
 ```
-sudo chmod 600 /etc/netplan/50-cloud-init.yaml
+sudo chmod 600 /etc/netplan/network.yaml
 sudo netplan apply
 ```
 
