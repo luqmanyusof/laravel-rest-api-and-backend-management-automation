@@ -20,6 +20,7 @@ VM (VirtualBox, OpenSSH), cron.
 - Understand **SSH (Secure Shell) / SFTP vs FTP (File Transfer Protocol)** (the concept) before
   touching anything
 - **VirtualBox installed + an Ubuntu 24.04 Server VM** built from Day 2's downloads
+- **Linux command-line essentials** — navigating, editing files, packages, users and permissions
 - An **SFTP server** with a dedicated user and a drop folder
 - **GUI transfers** with WinSCP and FileZilla — using each tool's real features, not just drag-drop
 - **Terminal transfers** with the `sftp` command — a working repertoire of everyday commands
@@ -31,9 +32,10 @@ on Laragon and isn't part of today's VM work), SSH key-based authentication and 
 
 **How this day builds (prerequisites first, easy first):**
 1. **Concept:** what SSH/SFTP is and why (no setup — just understand) → 2. **Build** the Ubuntu VM
-(the big prerequisite) → 3. Turn on the **SFTP server** + make a user → 4. Transfer files with a
-**GUI** (WinSCP, then FileZilla — in depth) → 5. Transfer from the **terminal** (many `sftp`
-examples) → 6. **Schedule** a routine task with **cron**.
+(the big prerequisite) → 3. **Linux admin essentials** (find your feet on the command line) → 4.
+Turn on the **SFTP server** + make a user → 5. Transfer files with a **GUI** (WinSCP, then FileZilla
+— in depth) → 6. Transfer from the **terminal** (many `sftp` examples) → 7. **Schedule** a routine
+task with **cron**.
 
 > **Concept before setup, easy before advanced:** you read the "why" first, then get a quick
 > visual win with a GUI before dropping to the terminal, and finish by automating a task with
@@ -70,7 +72,7 @@ yet; just read.
 
 **SSH in one line:** a secure, encrypted remote shell. `ssh user@host` logs you into another
 machine's command line over port 22. **SFTP rides on that same SSH connection** — so once a
-machine runs an SSH server, it can do SFTP too (you'll rely on this in Topic 3).
+machine runs an SSH server, it can do SFTP too (you'll rely on this in Topic 4).
 
 **The pattern we're building toward:** a **drop folder**. A partner connects over SFTP and drops
 a file into an inbox on your server; a scheduled job on the server then picks it up and files it
@@ -78,7 +80,7 @@ away. This is one of the most common real-world integrations — no API required
 
 **Checkpoint ✅** You can explain, in one sentence each: why SFTP beats FTP (encryption, single
 port 22), and how SFTP relates to SSH (it runs over it). You'll connect to a real server for the
-first time in Topic 4, once the VM exists.
+first time in Topic 5, once the VM exists.
 
 ---
 
@@ -172,9 +174,220 @@ ping <VM_IP>
 
 ---
 
-## Topic 3 — Turn on the SFTP server & create a dedicated user
+## Topic 3 — Linux admin essentials
 
 **Prerequisite:** the VM built and networked (Topic 2).
+
+**Goal:** get comfortable with the everyday Linux commands you'll lean on for the rest of the day
+— navigating, viewing and editing files, installing packages, managing users, and reading
+permissions. None of this is SFTP-specific; it's the ground under Topics 4–7. Type everything
+**inside the VM** (the VirtualBox `training-sftp` window). Every command here is safe to run and
+repeat.
+
+### 3a — Read the prompt, and `sudo`
+
+The shell prompt tells you who and where you are:
+
+```text
+admin@training-sftp:~$
+│     │            │ │
+│     │            │ └─ $ = normal user   (# would mean root)
+│     │            └─── ~ = your home directory (/home/admin)
+│     └──────────────── the machine's hostname
+└────────────────────── your username
+```
+
+> The hostname (`training-sftp`) confirms you're on the VM and not your Windows machine — glance
+> at it before any command that matters.
+
+Your `admin` user is a normal user. Admin tasks (installing software, editing system files,
+managing other users) need **`sudo`** ("superuser do") in front — it asks for *your* password the
+first time:
+
+```bash
+$ sudo whoami
+root
+```
+
+> **Rule of thumb:** work as your normal user; add `sudo` only when a command needs admin rights.
+> Don't log in as root directly.
+
+### 3b — Move around the filesystem
+
+Linux is one big tree starting at `/` (root):
+
+```bash
+$ pwd            # print working directory — where am I?
+$ ls             # list files here
+$ ls -l          # long listing: permissions, owner, size, date
+$ ls -la         # also show hidden files (those starting with .)
+$ cd /etc        # change directory to /etc
+$ cd ~           # go to your home directory
+$ cd ..          # go up one level
+$ cd -           # go back to the previous directory
+```
+
+Directories worth knowing:
+
+| Path | What lives there |
+|------|------------------|
+| `/etc` | System configuration files (e.g. `/etc/ssh/sshd_config`) |
+| `/var/log` | Log files (`syslog`, `auth.log`) |
+| `/home/admin` | Your personal files |
+| `/home/sftpuser` | The SFTP user's home + `upload/` inbox (you create this in Topic 4) |
+| `/usr/bin` | Installed programs |
+| `/tmp` | Temporary files (wiped on reboot) |
+
+📌 **Checkpoint:** `cd /var/log` then `ls` — you should see files like `syslog` and `auth.log`.
+
+### 3c — View and edit files
+
+```bash
+$ cat /etc/hostname          # dump a whole (small) file
+$ less /var/log/syslog       # scroll a big file: ↑ ↓ PgUp PgDn, q to quit
+$ head -n 20 /var/log/syslog # first 20 lines
+$ tail -n 20 /var/log/syslog # last 20 lines
+$ tail -f /var/log/syslog    # live-follow a log (Ctrl+C to stop)
+```
+
+`tail -f` is your best friend when watching a service in real time — you'll use it to watch the
+cron job fire in Topic 7.
+
+`nano` is the beginner-friendly editor used throughout the day (you'll edit `sshd_config` and a
+crontab with it later):
+
+```bash
+$ nano notes.txt        # a normal file
+$ sudo nano /etc/hosts  # a system file needs sudo
+```
+
+Inside nano: type normally to edit · **Ctrl+O** then **Enter** = save (write Out) · **Ctrl+X** =
+exit · **Ctrl+K** = cut a line, **Ctrl+U** = paste.
+
+> ⚠️ Editing system files carelessly can break things. When a lab says edit a config file, change
+> only the lines it names.
+
+### 3d — Install software with APT
+
+Ubuntu installs software from **repositories** with `apt`:
+
+```bash
+$ sudo apt update            # refresh the list of available packages
+$ sudo apt upgrade           # install available updates
+$ sudo apt install tree      # install a package (example: 'tree')
+$ tree /etc/apt              # try the tool you just installed
+$ sudo apt remove tree       # remove it
+$ apt search htop            # search for a package
+```
+
+**Update the VM fully now:**
+
+```bash
+$ sudo apt update && sudo apt upgrade -y
+```
+
+`&&` means "run the second command only if the first succeeded"; `-y` auto-answers yes. (This is
+the same pattern you'd use to install OpenSSH by hand if it were ever missing — see Topic 4, Step
+1.)
+
+📌 **Checkpoint:** a second `sudo apt upgrade` ends with `0 to upgrade` — the system is current.
+
+### 3e — Users and groups
+
+```bash
+$ whoami                 # your username
+$ id                     # your user id and group memberships
+$ groups                 # groups you belong to (note: sudo)
+```
+
+Creating and removing a user (know the command — you'll use `adduser` for real in Topic 4):
+
+```bash
+$ sudo adduser bob            # interactive: creates user 'bob' + home dir
+$ sudo usermod -aG sudo bob   # give bob admin rights (add to the sudo group)
+$ sudo deluser bob            # remove a user
+```
+
+> **Why it matters here:** in Topic 4 you'll create a dedicated `sftpuser` with exactly this
+> `adduser` command, and OpenSSH already runs as its own system user. Understanding users now
+> makes the SFTP setup make sense.
+
+### 3f — File permissions
+
+Every file has an **owner**, a **group**, and permission bits. `ls -l` shows them (the two `admin`
+words are the file's owner and group):
+
+```text
+-rw-r--r-- 1 admin admin 220 Sep 10 09:00 notes.txt
+│ │  │  └── others:  r--   (read only)
+│ │  └───── group:   r--   (read only)
+│ └──────── owner:   rw-   (read + write)
+└────────── type:    -     (- = file, d = directory)
+```
+
+Changing permissions and ownership:
+
+```bash
+$ chmod 640 notes.txt                    # owner rw, group r, others none
+$ sudo chown admin:admin notes.txt       # set owner:group
+```
+
+The three digits are owner/group/others, where **4=read, 2=write, 1=execute** added together (so
+`6 = 4+2 = rw`, `7 = rwx`). This is exactly the `chown`/`chmod 755` you'll run on the SFTP
+`upload/` folder in Topic 4.
+
+📌 **Checkpoint:** `chmod 600 notes.txt` then `ls -l notes.txt` shows `-rw-------`.
+
+### 3g — Disk, memory, processes, and help
+
+```bash
+$ df -h               # disk space, human-readable
+$ free -h             # memory usage
+$ top                 # live process viewer (q to quit)
+$ ps aux | grep ssh   # find running processes matching 'ssh'
+$ man ls              # full manual for a command (q to quit)
+$ ls --help           # quick usage summary
+```
+
+The `|` (pipe) feeds one command's output into another — here `ps aux` into `grep`. That
+`ps aux | grep ssh` is a quick way to confirm the SSH server is running before you rely on it in
+Topic 4.
+
+### Command cheat-sheet
+
+| Task | Command |
+|------|---------|
+| Where am I | `pwd` |
+| List files | `ls -la` |
+| Change dir | `cd /path` |
+| View file | `less file` |
+| Follow a log | `tail -f file` |
+| Edit file | `nano file` |
+| Update system | `sudo apt update && sudo apt upgrade` |
+| Install software | `sudo apt install <name>` |
+| Disk space | `df -h` |
+| Memory | `free -h` |
+| Processes | `top` |
+| Who am I | `whoami` / `id` |
+
+**Checkpoint ✅**
+- You can read the prompt and tell you're on `training-sftp` as a normal user.
+- You can move around with `cd`/`ls`/`pwd`, view a log with `less`/`tail`, and edit a file in `nano`.
+- `sudo apt update && sudo apt upgrade -y` completes, and you can read owner/group/others in `ls -l`.
+
+**Common problems**
+- *"user is not in the sudoers file"* → log in as `admin` (the account you created during install),
+  not a limited user.
+- *`apt` errors about a lock (`Could not get lock /var/lib/dpkg/lock`)* → another update is running
+  (or one crashed); wait a minute and retry, or reboot the VM.
+- *Edited a system file and something broke* → reopen it with `sudo nano` and undo your change; only
+  ever alter the lines a lab names.
+
+---
+
+## Topic 4 — Turn on the SFTP server & create a dedicated user
+
+**Prerequisite:** the VM built and networked (Topic 2), and comfort with the shell (Topic 3).
 
 **Goal:** confirm the VM's SSH/SFTP server is running, then add a dedicated transfer user with a
 drop folder. Type these **inside the VM** (in the VirtualBox window — no remote connection needed
@@ -257,14 +470,14 @@ sudo chmod 755 /home/sftpuser/upload
 > confining a user so `/home/sftpuser` becomes their whole visible filesystem) requires that
 > folder to be **root-owned** — which then stops `sftpuser` writing anywhere in its home except
 > `upload/`. Cron still runs (it doesn't go through SSH, so `ForceCommand` never affects it), but
-> the Topic 6 cron job couldn't write to a `processed/` folder inside the chroot — so if you apply
+> the Topic 7 cron job couldn't write to a `processed/` folder inside the chroot — so if you apply
 > this hardening, keep any folders the cron job writes **outside** `/home/sftpuser`.
 
 ---
 
-## Topic 4 — Transfer files with a GUI client (WinSCP & FileZilla, in depth)
+## Topic 5 — Transfer files with a GUI client (WinSCP & FileZilla, in depth)
 
-**Prerequisite:** the SFTP server + `sftpuser` (Topic 3).
+**Prerequisite:** the SFTP server + `sftpuser` (Topic 4).
 
 **Goal:** make your **first connection from Windows to the VM** and get genuinely comfortable with
 the two GUI clients ops teams actually use. We go past drag-and-drop into the features you'll rely
@@ -295,7 +508,7 @@ Chandra Rao,chandra@test.com
 **Step 1 — save a reusable session.**
 1. Open WinSCP → the **Login** dialog appears.
 2. **New Site.** File protocol: **SFTP**. Host name: `<VM_IP>`. Port: **22**.
-3. User name: `sftpuser`. Password: the one you set in Topic 3.
+3. User name: `sftpuser`. Password: the one you set in Topic 4.
 4. Click **Save** → name it `training-sftp` → tick **Save password** (lab only) → **OK**. The
    session is now stored in the left-hand list for one-click reconnects.
 5. Select it → **Login** → on first connect accept the host key (**Yes**) to trust the VM.
@@ -336,8 +549,8 @@ can re-open the saved `training-sftp` session in one click, and you've edited a 
 
 **Common problems**
 - *"Host key not verified"* → click **Yes/Accept** to trust the VM the first time.
-- *`Connection refused` / timeout* → check `<VM_IP>` and that the VM + SSH are running (Topics 2–3).
-- *Can't write to `upload/`* → the folder isn't owned by `sftpuser` (redo Topic 3, Step 4).
+- *`Connection refused` / timeout* → check `<VM_IP>` and that the VM + SSH are running (Topics 2 & 4).
+- *Can't write to `upload/`* → the folder isn't owned by `sftpuser` (redo Topic 4, Step 4).
 
 ---
 
@@ -383,7 +596,7 @@ on it, and it runs on Windows, macOS and Linux.
 
 **Common problems**
 - *FileZilla defaults to plain FTP* → make sure the protocol says **SFTP**, not FTP.
-- *"Connection timed out"* → wrong `<VM_IP>`, or the VM/SSH isn't running (Topics 2–3).
+- *"Connection timed out"* → wrong `<VM_IP>`, or the VM/SSH isn't running (Topics 2 & 4).
 - *Edited file didn't upload* → confirm you accepted the **View/Edit** re-upload prompt.
 
 **WinSCP or FileZilla?** For a Windows-only shop, **WinSCP** is usually smoother (F4 in-place edit,
@@ -392,9 +605,9 @@ Windows, macOS and Linux**. Both speak identical SFTP to the server — the choi
 
 ---
 
-## Topic 5 — Transfer files from the terminal
+## Topic 6 — Transfer files from the terminal
 
-**Prerequisite:** a working SFTP connection (you just did it in the GUI, Topic 4).
+**Prerequisite:** a working SFTP connection (you just did it in the GUI, Topic 5).
 
 **Goal:** do the same transfers from the command line — the mechanics a GUI hides, and the skill
 that scales to servers with no desktop. You'll build a working repertoire of `sftp` commands. All
@@ -498,9 +711,9 @@ instead of `sftp`: `ssh sftpuser@<VM_IP>` gives you a Linux prompt on the server
 
 ---
 
-## Topic 6 — Schedule a routine task with cron
+## Topic 7 — Schedule a routine task with cron
 
-**Prerequisite:** files can arrive in `/home/sftpuser/upload` over SFTP (Topics 4–5).
+**Prerequisite:** files can arrive in `/home/sftpuser/upload` over SFTP (Topics 5–6).
 
 **Goal:** understand **cron** (Linux's built-in scheduler) and use it to run a routine task
 automatically — no desktop, no manual trigger. We keep the task deliberately simple: tidy the SFTP
